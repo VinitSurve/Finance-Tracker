@@ -1,0 +1,340 @@
+.ai-assistant-container {
+  position: fixed;
+  bottom: 5.5rem; /* Position just above floating nav */
+  right: 1.5rem;
+  z-index: 950; /* Below floating nav but above other content */
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.ai-assistant-button {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1.25rem;
+  border-radius: 2rem;
+  border: none;
+  background: linear-gradient(135deg, #10b981, #14b8a6); /* Green finance-themed gradient */
+  color: white;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 8px 16px rgba(20, 184, 166, 0.25);
+}
+
+.ai-assistant-button:hover {
+  box-shadow: 0 10px 20px rgba(99, 102, 241, 0.35);
+}
+
+.ai-button-icon {
+  font-size: 1.25rem;
+}
+
+.ai-assistant-window {
+  position: absolute;
+  bottom: calc(100% + 1rem);
+  right: 0;
+  width: 350px;
+  max-height: 500px;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 1rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  color: var(--text-primary);
+}
+
+.dark-mode .ai-assistant-window {
+  background: rgba(30, 41, 59, 0.9);
+  color: #f1f5f9;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+
+.ai-assistant-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.dark-mode .ai-assistant-header {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.ai-assistant-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.ai-icon {
+  font-size: 1.25rem;
+}
+
+.ai-assistant-title h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.dark-mode .ai-assistant-title h3 {
+  color: #f1f5f9;
+}
+
+.ai-close-button {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+.ai-close-button:hover {
+  opacity: 1;
+}
+
+.dark-mode .ai-close-button {
+  color: #f1f5f9;
+}
+
+.ai-assistant-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-height: 350px;
+}
+
+.ai-message {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  max-width: 80%;
+}
+
+.ai-message.bot {
+  align-self: flex-start;
+}
+
+.ai-message.user {
+  align-self: flex-end;
+  flex-direction: row-reverse;
+}
+
+.ai-avatar, .user-avatar {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.ai-avatar {
+  background-color: #10b981; /* Green finance color */
+  color: white;
+}
+
+.user-avatar {
+  background-color: #6366f1;
+  color: white;
+}
+
+.ai-message-bubble {
+  padding: 0.75rem 1rem;
+  border-radius: 1rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--text-primary);
+}
+
+.ai-message.bot .ai-message-bubble {
+  background-color: rgba(255, 255, 255, 0.7);
+  border-top-left-radius: 0;
+  border-left: 3px solid #10b981; /* Green accent border */
+}
+
+.dark-mode .ai-message.bot .ai-message-bubble {
+  background-color: rgba(55, 65, 81, 0.8);
+  color: #f1f5f9; /* Ensure text is visible */
+  border-left: 3px solid #8b5cf6;
+}
+
+.ai-message.user .ai-message-bubble {
+  background-color: #6366f1;
+  color: white;
+  border-top-right-radius: 0;
+}
+
+.light-mode .ai-message.user .ai-message-bubble {
+  color: white;
+}
+
+.dark-mode .ai-message.user .ai-message-bubble {
+  color: white;
+}
+
+.typing {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.75rem 1rem;
+}
+
+.typing-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: rgba(0, 0, 0, 0.5);
+  animation: typing-dot 1.4s infinite ease-in-out both;
+}
+
+.dark-mode .typing-dot {
+  background-color: rgba(255, 255, 255, 0.5);
+}
+
+.typing-dot:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.typing-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typing-dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes typing-dot {
+  0%, 80%, 100% {
+    transform: scale(0.6);
+    opacity: 0.6;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Completely revised send button styling for maximum visibility */
+.ai-assistant-input {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  gap: 0.75rem;
+}
+
+.dark-mode .ai-assistant-input {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.ai-assistant-input input {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 1.5rem;
+  font-size: 0.875rem;
+  outline: none;
+  background-color: rgba(255, 255, 255, 0.8);
+}
+
+.dark-mode .ai-assistant-input input {
+  background-color: rgba(55, 65, 81, 0.8);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.ai-assistant-input input:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+}
+
+/* New explicit send button styling */
+.send-button {
+  padding: 0.5rem 1rem;
+  background-color: #6366f1;
+  color: white !important; /* Force white text color */
+  border: none;
+  border-radius: 1.5rem;
+  font-weight: 500;
+  font-size: 0.9rem;
+  cursor: pointer;
+  min-width: 70px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.dark-mode .send-button {
+  background-color: #8b5cf6;
+  color: white !important;
+}
+
+.send-button:hover:not(:disabled) {
+  background-color: #4f46e5;
+  transform: translateY(-2px);
+}
+
+.dark-mode .send-button:hover:not(:disabled) {
+  background-color: #7c3aed;
+}
+
+.send-button:disabled {
+  background-color: #9ca3af;
+  color: #f3f4f6 !important;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+  .ai-assistant-container {
+    right: 1rem;
+  }
+  
+  .ai-assistant-window {
+    width: 320px;
+  }
+}
+
+@media (max-width: 480px) {
+  .ai-assistant-container {
+    right: 0.5rem;
+    left: 0.5rem;
+    width: auto;
+  }
+  
+  .ai-assistant-window {
+    width: calc(100vw - 2rem);
+    max-width: none;
+    right: 0;
+  }
+  
+  .ai-button-text {
+    display: none; /* Hide text on small screens */
+  }
+  
+  .ai-assistant-button {
+    padding: 0.75rem;
+    border-radius: 50%;
+  }
+  
+  .ai-button-icon {
+    margin: 0;
+  }
+}

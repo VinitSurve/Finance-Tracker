@@ -1,0 +1,147 @@
+:root {
+  /* These will be dynamically updated by ThemeContext */
+  --color-primary: #111827;
+  --color-accent: #F59E0B;
+  --color-background: #F5F5F5;
+  --color-secondaryBg: #FFFFFF;
+  --color-cardBg: #FFFFFF;
+  --color-textPrimary: #0F172A;
+  --color-textSecondary: #6B7280;
+  --color-border: #D1D5DB;
+  --color-success: #10B981;
+  --color-error: #EF4444;
+  --color-warning: #F59E0B;
+  --color-dashboardGradient: linear-gradient(135deg, #111827 0%, #334155 100%);
+  --color-incomePageBg: #ECFDF5;
+  --color-expensePageBg: #FEF2F2;
+  --color-budgetPageBg: #FFF7ED;
+
+  /* Wallet/Account card colors */
+  --color-wallet: #F59E0B;
+  --color-bank: #2563EB;
+  --color-gpay: #4F46E5;
+  --color-piggy: #EC4899;
+
+  /* Additional semantic colors */
+  --color-income: var(--color-success);
+  --color-expense: var(--color-error);
+  --color-shadow: rgba(0, 0, 0, 0.1);
+  --color-overlay: rgba(0, 0, 0, 0.5);
+  
+  /* Card effects */
+  --glassmorphism-bg: rgba(255, 255, 255, 0.8);
+  --glassmorphism-backdrop-filter: blur(12px);
+  --glassmorphism-border: 1px solid rgba(255, 255, 255, 0.2);
+  --card-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+}
+
+/* Dark mode variables - these will be applied via JavaScript in ThemeContext */
+.dark-mode {
+  --color-primary: #F9FAFB;
+  --color-accent: #FBBF24;
+  --color-background: #0A0A0A;
+  --color-secondaryBg: #1C1C1E;
+  --color-cardBg: #1F2937;
+  --color-textPrimary: #E5E7EB;
+  --color-textSecondary: #9CA3AF;
+  --color-border: #374151;
+  --color-success: #34D399;
+  --color-error: #F87171;
+  --color-warning: #FBBF24;
+  --color-dashboardGradient: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+  --color-incomePageBg: #064E3B;
+  --color-expensePageBg: #7F1D1D;
+  --color-budgetPageBg: #450A0A;
+  
+  /* Card effects - dark mode */
+  --glassmorphism-bg: rgba(31, 41, 55, 0.7);
+  --glassmorphism-border: 1px solid rgba(255, 255, 255, 0.08);
+  --card-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+}
+
+/* Luxury card styles */
+.luxury-card {
+  background-color: var(--color-cardBg);
+  border-radius: 12px;
+  box-shadow: var(--card-shadow);
+  padding: 20px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.luxury-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+}
+
+.dark-mode .luxury-card:hover {
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+}
+
+/* Account card colors */
+.wallet-card {
+  background-color: var(--color-wallet);
+  color: white;
+}
+
+.bank-card {
+  background-color: var(--color-bank);
+  color: white;
+}
+
+.gpay-card {
+  background-color: var(--color-gpay);
+  color: white;
+}
+
+.piggy-card {
+  background-color: var(--color-piggy);
+  color: white;
+}
+
+/* Button styles */
+.btn {
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-primary {
+  background-color: var(--color-primary);
+  color: white;
+}
+
+.dark-mode .btn-primary {
+  background-color: var(--color-primary);
+  color: var(--color-background);
+}
+
+.btn-accent {
+  background-color: var(--color-accent);
+  color: white;
+}
+
+.btn-success {
+  background-color: var(--color-success);
+  color: white;
+}
+
+.btn-error {
+  background-color: var(--color-error);
+  color: white;
+}
+
+/* Glass effect */
+.glass {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.dark-mode .glass {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
