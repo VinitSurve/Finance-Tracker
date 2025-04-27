@@ -1,8 +1,17 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-const genAI = new GoogleGenerativeAI('AIzaSyAq8W81XFjsaHpKTZY3fm0puhdldfYuxeA');
+// Get API key from environment variable
+// Note: In Vite, environment variables must start with VITE_ to be exposed
+const apiKey = process.env.VITE_GEMINI_API_KEY || 'AIzaSyAq8W81XFjsaHpKTZY3fm0puhdldfYuxeA';
+const genAI = new GoogleGenerativeAI(apiKey);
 
 export async function askFinanceAI(prompt) {
+  // Add error handling for missing API key
+  if (!apiKey) {
+    console.error('Gemini API key is missing. Check your environment variables.');
+    return "I'm having trouble connecting to the finance assistant right now. API key not found.";
+  }
+
   const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
   const systemPrompt = `

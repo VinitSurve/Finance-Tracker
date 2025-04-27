@@ -4,6 +4,7 @@ import { useTheme } from '../context/ThemeContext';
 import { useCurrency } from '../context/CurrencyContext';
 import toast from 'react-hot-toast';
 import { supabase } from '../services/supabaseClient';
+import '../styles/variables.css'; // Import our new variables
 import '../styles/pages/Settings.css';
 
 const Settings = () => {
@@ -486,6 +487,40 @@ const Settings = () => {
                 </div>
               </motion.div>
             )}
+          </div>
+        </div>
+        
+        {/* Add mobile bottom navbar */}
+        <div className="bottom-navbar">
+          <div className="bottom-navbar-tabs">
+            <button 
+              className={`bottom-navbar-tab ${activeTab === 'profile' ? 'active' : ''}`}
+              onClick={() => setActiveTab('profile')}
+            >
+              <span className="bottom-navbar-icon">👤</span>
+              <span>Profile</span>
+            </button>
+            <button 
+              className={`bottom-navbar-tab ${activeTab === 'preferences' ? 'active' : ''}`}
+              onClick={() => setActiveTab('preferences')}
+            >
+              <span className="bottom-navbar-icon">⚙️</span>
+              <span>Preferences</span>
+            </button>
+            <button 
+              className={`bottom-navbar-tab ${activeTab === 'security' ? 'active' : ''}`}
+              onClick={() => setActiveTab('security')}
+            >
+              <span className="bottom-navbar-icon">🔒</span>
+              <span>Security</span>
+            </button>
+            <button 
+              className={`bottom-navbar-tab ${activeTab === 'data' ? 'active' : ''}`}
+              onClick={() => setActiveTab('data')}
+            >
+              <span className="bottom-navbar-icon">📊</span>
+              <span>Data</span>
+            </button>
           </div>
         </div>
       </div>

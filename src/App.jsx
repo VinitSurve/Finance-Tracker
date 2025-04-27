@@ -9,6 +9,7 @@ import PWAInstallPrompt from './components/PWAInstallPrompt';
 import LoadingScreen from './components/LoadingScreen';
 import Notifications from './components/Notifications';
 import { supabase } from './services/supabaseClient'; // Fixed import path
+import './styles/variables.css'; // Import variables at the app root
 
 // Lazy load pages for better performance
 const Dashboard = lazy(() => import('./pages/Dashboard'));

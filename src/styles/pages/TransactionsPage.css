@@ -810,24 +810,20 @@
 }
 
 .mobile-add-btn {
-  width: clamp(3rem, 10vw, 3.5rem);
-  height: clamp(3rem, 10vw, 3.5rem);
+  width: 60px;
+  height: 60px;
   border-radius: 50%;
   background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
   color: white;
-  font-size: clamp(1.3rem, 4vw, 1.5rem);
+  font-size: 28px;
   border: none;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 0 5px 15px rgba(99, 102, 241, 0.5);
+  box-shadow: 0 5px 15px rgba(99, 102, 241, 0.7);
   transition: all 0.3s ease;
   -webkit-tap-highlight-color: transparent;
-}
-
-.mobile-add-btn:hover {
-  transform: scale(1.05) rotate(5deg);
 }
 
 /* Responsive Design */

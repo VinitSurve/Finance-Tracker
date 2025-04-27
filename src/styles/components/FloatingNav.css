@@ -1,6 +1,6 @@
 .floating-nav-container {
   position: fixed;
-  bottom: 1.5rem; /* Keep this slightly lower than before */
+  bottom: 2.4rem; /* Keep this slightly lower than before */
   left: 50%;
   transform: translateX(-50%);
   z-index: 1000; /* Ensure this is higher than AIAssistant z-index */

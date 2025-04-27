@@ -52,6 +52,7 @@ const AddExpense = () => {
           .select(`
             id,
             amount,
+            balance_type_id,
             balance_type:balance_type_id (
               id,
               name,
@@ -65,6 +66,7 @@ const AddExpense = () => {
 
         const formattedAccounts = data.map(item => ({
           id: item.id,
+          balance_type_id: item.balance_type_id, // Store the balance_type_id
           name: item.balance_type?.name || 'Account',
           icon: item.balance_type?.icon || '💰',
           balance: parseFloat(item.amount || 0)
@@ -209,7 +211,13 @@ const AddExpense = () => {
       setIsSubmitting(true);
 
       const selectedAccount = accounts.find(acc => acc.id === formData.accountId);
-      const expenseAmount = parseFloat(formData.amount);
+      const expenseAmount = parseFloat(parseFloat(formData.amount).toFixed(2));
+
+      if (isNaN(expenseAmount) || expenseAmount <= 0) {
+        toast.error("Please enter a valid positive amount");
+        setIsSubmitting(false);
+        return;
+      }
 
       if (selectedAccount.balance < expenseAmount) {
         toast.error(`Insufficient balance in ${selectedAccount.name}`);
@@ -217,19 +225,27 @@ const AddExpense = () => {
         return;
       }
 
+      const transactionData = {
+        amount: expenseAmount,
+        category: formData.category,
+        type: 'expense',
+        note: formData.description || null,
+        reason: formData.customReason || null,
+        balance_type_id: selectedAccount.balance_type_id, // Use the correct foreign key
+        created_at: formData.date ? new Date(formData.date).toISOString() : new Date().toISOString()
+      };
+
+      console.log('Transaction data being sent:', transactionData);
+
       const { data, error } = await supabase
         .from('transactions')
-        .insert([{
-          amount: expenseAmount,
-          category: formData.category,
-          type: 'expense',
-          note: formData.description,
-          reason: formData.customReason,
-          balance_type_id: formData.accountId,
-          created_at: formData.date ? new Date(formData.date).toISOString() : new Date().toISOString()
-        }]);
+        .insert([transactionData])
+        .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error details:', error);
+        throw error;
+      }
 
       const newBalance = selectedAccount.balance - expenseAmount;
 
@@ -238,7 +254,10 @@ const AddExpense = () => {
         .update({ amount: newBalance })
         .eq('id', formData.accountId);
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('Error updating balance:', updateError);
+        throw updateError;
+      }
 
       if (isOverBudget) {
         await addPoints(-2, `Overspent on ${formData.category} budget`);

@@ -352,6 +352,8 @@ const BudgetManagement = () => {
         </div>
       </motion.section>
 
+      <br />
+
       <div className="budget-content">
         {/* Budget Progress & Add Button - Improved for mobile */}
         <motion.section 
@@ -621,6 +623,8 @@ const BudgetManagement = () => {
             </motion.section>
           )}
         </AnimatePresence>
+
+      
 
         {/* Tips section - Simplified for mobile */}
         <motion.section 

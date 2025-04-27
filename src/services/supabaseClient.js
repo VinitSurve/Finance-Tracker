@@ -1,27 +1,65 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Supabase connection credentials
-const supabaseUrl = 'https://rviekbiwgbziflrbaduq.supabase.co';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ2aWVrYml3Z2J6aWZscmJhZHVxIiwicm9sZSI6ImFub24iLCJpYXQiOjE2Nzc1OTA0MDAsImV4cCI6MTk5MzE2NjQwMH0.Z94dGIhV0prGyi4mNwbRwdO2OJ4YzBkxZTXzxO3IC1A';
+// Get environment variables for Supabase connection
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
-// Create the supabase client with proper configuration
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Create the Supabase client with error handling
+export const supabase = createClient(supabaseUrl, supabaseKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+  },
+});
 
-// Test the connection and log the result
+// Test the connection using existing tables instead of creating a new one
 export const testConnection = async () => {
   try {
-    const { data, error } = await supabase.from('user_balances').select('count(*)');
-    if (error) {
-      console.error('Database connection test failed:', error);
-      return false;
+    // Check if we can connect by querying existing tables
+    // First try the transactions table which should definitely exist
+    const { error: transactionsError } = await supabase
+      .from('transactions')
+      .select('count')
+      .limit(1);
+    
+    if (!transactionsError) {
+      console.log('Database connection successful (transactions table)');
+      return true;
     }
-    console.log('Database connection successful');
-    return true;
-  } catch (err) {
-    console.error('Database connection error:', err);
+    
+    // If transactions table fails, try user_balances
+    const { error: balancesError } = await supabase
+      .from('user_balances')
+      .select('count')
+      .limit(1);
+      
+    if (!balancesError) {
+      console.log('Database connection successful (user_balances table)');
+      return true;
+    }
+    
+    // If both fail, check if we can at least get the server time
+    const { error: systemError } = await supabase.rpc('get_server_time');
+    
+    if (!systemError) {
+      console.log('Database connection successful (system functions)');
+      return true;
+    }
+    
+    // All checks failed
+    console.error('Database connection test failed: Unable to query any tables or functions');
+    return false;
+  } catch (error) {
+    console.error('Database connection test failed:', error);
     return false;
   }
 };
 
-// Call the test connection function to validate on load
-testConnection();
+// Initialize the connection test
+testConnection().then((success) => {
+  if (!success && (supabaseUrl === '' || supabaseKey === '')) {
+    console.warn('Supabase URL or key is missing. Please check your environment variables.');
+  } else if (!success) {
+    console.error('Could not connect to Supabase. Please check your credentials and network connection.');
+  }
+});

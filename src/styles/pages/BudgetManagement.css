@@ -42,7 +42,7 @@
 }
 
 .budget-header h1 {
-  font-size: clamp(1.8rem, 5vw, 2.5rem);
+  font-size: clamp(2rem, 5.5vw, 2.8rem);
   line-height: 1.2;
   margin-bottom: 0.5rem;
   background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
@@ -61,7 +61,7 @@
 }
 
 .budget-header p {
-  font-size: clamp(0.9rem, 2vw, 1.1rem);
+  font-size: clamp(1rem, 2.2vw, 1.3rem);
   color: var(--color-textSecondary);
   opacity: 0.9;
 }
@@ -80,6 +80,8 @@
   align-items: center;
   gap: clamp(0.8rem, 2vw, 1rem);
   width: 100%;
+  max-width: 1200px; /* or whatever your container uses */
+  margin: 0 auto; /* center it if needed */
 }
 
 .month-selector {
@@ -163,7 +165,7 @@
 }
 
 .section-header h2 {
-  font-size: clamp(1.2rem, 3vw, 1.4rem);
+  font-size: clamp(1.4rem, 3.5vw, 1.8rem);
   font-weight: 600;
   color: var(--color-textPrimary);
   margin: 0;
@@ -731,7 +733,7 @@
   box-shadow: 0 5px 15px rgba(99, 102, 241, 0.3);
 }
 
-/* Mobile Floating Action Button */
+/* Mobile Floating Action Button - Enhanced size */
 .mobile-fab {
   position: fixed;
   bottom: clamp(1.5rem, 5vw, 2rem);
@@ -741,20 +743,25 @@
 }
 
 .mobile-add-btn {
-  width: clamp(3rem, 10vw, 3.5rem);
-  height: clamp(3rem, 10vw, 3.5rem);
+  width: 70px;
+  height: 70px;
   border-radius: 50%;
   background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
   color: white;
-  font-size: clamp(1.3rem, 4vw, 1.5rem);
+  font-size: 32px;
   border: none;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 0 5px 15px rgba(99, 102, 241, 0.5);
+  box-shadow: 0 8px 20px rgba(99, 102, 241, 0.6);
   transition: all 0.3s ease;
   -webkit-tap-highlight-color: transparent;
+}
+
+.mobile-add-btn:hover {
+  transform: scale(1.05) rotate(5deg);
+  box-shadow: 0 10px 25px rgba(99, 102, 241, 0.8);
 }
 
 /* Responsive Design */
@@ -803,8 +810,13 @@
   
   .mobile-fab {
     display: block;
-    bottom: clamp(5rem, 10vh, 6rem); /* Increased bottom spacing to avoid overlap */
-    right: clamp(1.2rem, 4vw, 2.5rem); /* Match right padding */
+    bottom: clamp(5rem, 10vh, 6rem);
+  }
+  
+  .mobile-add-btn {
+    width: 70px;
+    height: 70px;
+    font-size: 32px;
   }
   
   .cancel-btn, .save-btn, .add-budget-btn, .create-first-budget-btn {
@@ -881,8 +893,13 @@
   }
   
   .mobile-fab {
-    bottom: clamp(4rem, 8vh, 5rem);
+    bottom: clamp(4.5rem, 8vh, 5.5rem);
     right: clamp(1rem, 4vw, 1.5rem);
+  }
+  
+  .mobile-add-btn {
+    width: 65px;
+    height: 65px;
   }
 }
 
@@ -912,8 +929,8 @@
   }
   
   .mobile-add-btn {
-    width: 3rem;
-    height: 3rem;
+    width: 58px;
+    height: 58px;
   }
   
   .mobile-fab {

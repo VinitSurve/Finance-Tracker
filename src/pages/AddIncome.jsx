@@ -47,6 +47,7 @@ const AddIncome = () => {
           .select(`
             id,
             amount,
+            balance_type_id,
             balance_type:balance_type_id (
               id,
               name,
@@ -60,6 +61,7 @@ const AddIncome = () => {
         
         const formattedAccounts = data.map(item => ({
           id: item.id,
+          balance_type_id: item.balance_type_id, // Store the balance_type_id
           name: item.balance_type?.name || 'Account',
           icon: item.balance_type?.icon || '💰',
           balance: parseFloat(item.amount || 0)
@@ -145,35 +147,60 @@ const AddIncome = () => {
     try {
       setIsSubmitting(true);
       
+      // Ensure amount is a proper number
+      const incomeAmount = parseFloat(parseFloat(formData.amount).toFixed(2));
+      
+      // Validate the amount is positive
+      if (isNaN(incomeAmount) || incomeAmount <= 0) {
+        toast.error("Please enter a valid positive amount");
+        setIsSubmitting(false);
+        return;
+      }
+      
+      // Get the selected account
+      const selectedAccount = accounts.find(acc => acc.id === formData.accountId);
+      
+      // Create the transaction record with the correct balance_type_id
+      const transactionData = {
+        amount: incomeAmount,
+        category: formData.category,
+        type: 'income',
+        note: formData.description || null,
+        reason: formData.customReason || null,
+        balance_type_id: selectedAccount.balance_type_id, // Use the correct foreign key
+        created_at: formData.date ? new Date(formData.date).toISOString() : new Date().toISOString()
+      };
+      
+      console.log('Transaction data being sent:', transactionData);
+      
       const { data, error } = await supabase
         .from('transactions')
-        .insert([{
-          amount: parseFloat(formData.amount),
-          category: formData.category,
-          type: 'income',
-          note: formData.description,
-          reason: formData.customReason,
-          balance_type_id: formData.accountId,
-          created_at: formData.date ? new Date(formData.date).toISOString() : new Date().toISOString()
-        }]);
+        .insert([transactionData])
+        .select();
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error details:', error);
+        throw error;
+      }
       
-      const selectedAccount = accounts.find(acc => acc.id === formData.accountId);
-      const newBalance = selectedAccount.balance + parseFloat(formData.amount);
+      // Update the account balance
+      const newBalance = (selectedAccount.balance || 0) + incomeAmount;
       
       const { error: updateError } = await supabase
         .from('user_balances')
         .update({ amount: newBalance })
         .eq('id', formData.accountId);
       
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('Error updating balance:', updateError);
+        throw updateError;
+      }
       
       await addPoints(2, 'Income recorded');
       
       new Audio('/sounds/cash-register.mp3').play().catch(e => console.log('Sound play failed:', e));
       
-      toast.success(`Income of ${formatAmount(parseFloat(formData.amount))} added successfully! ✨`);
+      toast.success(`Income of ${formatAmount(incomeAmount)} added successfully! ✨`);
       
       navigate('/dashboard');
     } catch (error) {
