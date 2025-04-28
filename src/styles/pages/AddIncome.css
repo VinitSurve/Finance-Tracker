@@ -1,51 +1,201 @@
-/* Add Income Page Styles - Luxury Finance Theme */
-.add-income-container {
-  padding: 2rem 2rem 7rem;
+/* Add Income Page Styles - Modern Luxury Finance Theme */
+
+.add-income-page {
   min-height: 100vh;
-  position: relative;
-  transition: background 0.3s ease;
-}
-
-.light-mode.add-income-container {
-  background: var(--color-incomePageBg);
+  width: 100%;
+  padding: clamp(1rem, 5vw, 2rem) clamp(0.5rem, 3vw, 2rem) clamp(4rem, 10vh, 7rem);
+  transition: var(--transition-default);
+  background: var(--color-background);
   color: var(--color-textPrimary);
 }
 
-.dark-mode.add-income-container {
-  background: var(--color-incomePageBg);
-  color: var(--color-textPrimary);
+/* Container for all income content */
+.add-income-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
 }
 
-/* Header styles */
-.form-header {
-  margin-bottom: 2rem;
+/* Header styling */
+.add-income-header {
   text-align: center;
+  margin-bottom: clamp(1.5rem, 5vw, 2.5rem);
 }
 
-.form-header h1 {
-  font-size: 2.2rem;
+.add-income-header h1 {
+  font-size: clamp(2rem, 5.5vw, 2.8rem);
   font-weight: 700;
   margin-bottom: 0.5rem;
+  background: linear-gradient(135deg, var(--color-success) 0%, #3CB371 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: inline-block;
+}
+
+.add-income-header p {
+  font-size: clamp(1rem, 2.2vw, 1.3rem);
+  color: var(--color-textSecondary);
+  opacity: 0.9;
+}
+
+/* Main content layout */
+.add-income-content {
+  display: flex;
+  gap: clamp(1rem, 4vw, 2rem);
+  width: 100%;
+}
+
+/* Sidebar styling */
+.add-income-sidebar {
+  flex: 0 0 280px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Income stats panel */
+.income-stats-panel {
+  background-color: var(--color-cardBg);
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: var(--card-shadow);
+  border: 1px solid var(--color-border);
+  transition: var(--transition-default);
+}
+
+.income-stats-panel:hover {
+  box-shadow: 0px 8px 30px rgba(0, 0, 0, 0.15);
+}
+
+.dark-mode .income-stats-panel:hover {
+  box-shadow: 0px 8px 30px rgba(0, 0, 0, 0.4);
+}
+
+.income-stat-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.income-stat-item:last-child {
+  border-bottom: none;
+}
+
+.income-stat-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  background-color: rgba(16, 185, 129, 0.1);
   color: var(--color-success);
 }
 
-.form-header p {
-  font-size: 1.1rem;
-  opacity: 0.8;
+.income-stat-details {
+  flex: 1;
 }
 
-/* Form container - luxury style */
-.income-form {
-  max-width: 500px;
-  margin: 0 auto;
-  background-color: var(--color-secondaryBg);
-  border-radius: 1.2rem;
-  padding: 2rem;
+.income-stat-label {
+  font-size: 0.85rem;
+  color: var(--color-textSecondary);
+  margin-bottom: 0.3rem;
+}
+
+.income-stat-value {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--color-textPrimary);
+}
+
+/* AI Tips panel */
+.ai-tips-panel {
+  background-color: var(--color-cardBg);
+  border-radius: 16px;
+  padding: 1.5rem;
   box-shadow: var(--card-shadow);
   border: 1px solid var(--color-border);
 }
 
-/* Form groups */
+.ai-tips-header {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin-bottom: 1rem;
+}
+
+.ai-tips-icon {
+  font-size: 1.5rem;
+}
+
+.ai-tips-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--color-textPrimary);
+}
+
+.ai-tip-item {
+  background-color: rgba(16, 185, 129, 0.08);
+  padding: 1rem;
+  border-radius: 12px;
+  margin-bottom: 1rem;
+  border-left: 3px solid var(--color-success);
+}
+
+.ai-tip-text {
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: var(--color-textPrimary);
+}
+
+/* Main form area */
+.add-income-main {
+  flex: 1;
+}
+
+/* Form panel styling */
+.add-income-form-panel {
+  background-color: var(--color-cardBg);
+  border-radius: 16px;
+  padding: clamp(1.2rem, 4vw, 2rem);
+  box-shadow: var(--card-shadow);
+  border: 1px solid var(--color-border);
+  transition: var(--transition-default);
+}
+
+.add-income-form-panel:hover {
+  box-shadow: 0px 8px 30px rgba(0, 0, 0, 0.15);
+}
+
+.dark-mode .add-income-form-panel:hover {
+  box-shadow: 0px 8px 30px rgba(0, 0, 0, 0.4);
+}
+
+/* Form sections */
+.form-section {
+  margin-bottom: 2rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.form-section:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.form-section h3 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 1.2rem;
+  color: var(--color-success);
+}
+
+/* Form group */
 .form-group {
   margin-bottom: 1.5rem;
 }
@@ -56,6 +206,20 @@
   font-weight: 600;
   margin-bottom: 0.5rem;
   color: var(--color-textPrimary);
+}
+
+/* Error state for fields */
+.form-group select.error-border,
+.form-group input.error-border,
+.form-group textarea.error-border {
+  border-color: var(--color-error);
+  box-shadow: 0 0 0 1px var(--color-error);
+}
+
+.field-error-message {
+  color: var(--color-error);
+  font-size: 0.8rem;
+  margin-top: 0.3rem;
 }
 
 /* Amount input with animation */
@@ -79,10 +243,10 @@
 
 .amount-input input {
   width: 100%;
-  padding: 0.85rem 1rem 0.85rem 2.2rem;
+  padding: 0.95rem 1rem 0.95rem 2.2rem;
   font-size: 1.2rem;
   border: 1px solid var(--color-border);
-  border-radius: 0.8rem;
+  border-radius: 12px;
   background-color: var(--color-secondaryBg);
   transition: all 0.3s ease;
   color: var(--color-textPrimary);
@@ -94,54 +258,34 @@
   box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
 }
 
-/* Money emoji animation */
-.money-emoji {
-  position: absolute;
-  right: 1rem;
-  font-size: 1.5rem;
-}
-
-/* Select account dropdown */
-.account-select {
+/* General form inputs */
+.form-group select,
+.form-group input[type="date"],
+.form-group input[type="text"],
+.form-group textarea {
   width: 100%;
-  padding: 0.75rem 1rem;
-  font-size: 1rem;
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
   border: 1px solid var(--color-border);
-  border-radius: 0.8rem;
   background-color: var(--color-secondaryBg);
   color: var(--color-textPrimary);
+  font-size: 1rem;
   transition: all 0.3s ease;
-  cursor: pointer;
+}
+
+.form-group select {
   appearance: none;
   background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
   background-repeat: no-repeat;
-  background-position: right 1rem center;
+  background-position: right 0.7rem center;
   background-size: 1em;
+  padding-right: 2rem;
 }
 
-.account-select:focus {
-  outline: none;
-  border-color: var(--color-success);
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
-}
-
-/* Other form inputs */
-.category-select,
-.date-input,
-.notes-input {
-  width: 100%;
-  padding: 0.75rem 1rem;
-  font-size: 1rem;
-  border: 1px solid var(--color-border);
-  border-radius: 0.8rem;
-  background-color: var(--color-secondaryBg);
-  color: var(--color-textPrimary);
-  transition: all 0.3s ease;
-}
-
-.category-select:focus,
-.date-input:focus,
-.notes-input:focus {
+.form-group select:focus,
+.form-group input[type="date"]:focus,
+.form-group input[type="text"]:focus,
+.form-group textarea:focus {
   outline: none;
   border-color: var(--color-success);
   box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
@@ -163,106 +307,129 @@
   background: none;
   border: none;
   font-size: 0.9rem;
-  color: var(--color-accent);
+  color: var(--color-success);
   cursor: pointer;
-  padding: 0.2rem 0.5rem;
-  border-radius: 0.5rem;
+  padding: 0.3rem 0.6rem;
+  border-radius: 6px;
   transition: all 0.3s ease;
 }
 
 .add-custom-reason-btn:hover {
-  background-color: rgba(99, 102, 241, 0.1);
-  transform: translateY(-2px);
-}
-
-/* AI Tips */
-.ai-tip {
-  display: flex;
   background-color: rgba(16, 185, 129, 0.1);
-  padding: 1rem;
-  border-radius: 0.8rem;
-  margin-bottom: 1.5rem;
-  border-left: 3px solid var(--color-success);
-}
-
-.tip-icon {
-  font-size: 1.2rem;
-  margin-right: 0.8rem;
-  flex-shrink: 0;
-}
-
-.tip-text {
-  font-size: 0.9rem;
-  line-height: 1.5;
-  color: var(--color-textPrimary);
+  transform: translateY(-2px);
 }
 
 /* Form actions */
 .form-actions {
   display: flex;
-  justify-content: space-between;
-  margin-top: 2rem;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 1.5rem;
 }
 
 .cancel-button {
-  padding: 0.75rem 1.5rem;
-  font-size: 1rem;
+  padding: 0.85rem 1.8rem;
+  border-radius: 12px;
+  font-size: 0.95rem;
   font-weight: 500;
-  color: var(--color-textSecondary);
   background-color: transparent;
   border: 1px solid var(--color-border);
-  border-radius: 0.8rem;
+  color: var(--color-textSecondary);
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: var(--transition-default);
 }
 
 .cancel-button:hover {
-  background-color: rgba(0, 0, 0, 0.05);
-}
-
-.dark-mode .cancel-button:hover {
-  background-color: rgba(255, 255, 255, 0.05);
+  background-color: var(--color-hover);
+  transform: translateY(-2px);
 }
 
 .submit-button {
-  padding: 0.75rem 2rem;
-  font-size: 1rem;
+  padding: 0.85rem 1.8rem;
+  border-radius: 12px;
+  font-size: 0.95rem;
   font-weight: 500;
+  background: linear-gradient(135deg, var(--color-success) 0%, #3CB371 100%);
   color: white;
-  background: var(--color-success);
   border: none;
-  border-radius: 0.8rem;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: var(--transition-default);
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
 }
 
 .submit-button:hover {
-  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
   transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
 }
 
-/* Responsive styles */
-@media (max-width: 768px) {
-  .add-income-container {
-    padding: 1.5rem 1rem 6rem;
-  }
-  
-  .form-header h1 {
-    font-size: 1.8rem;
-  }
-  
-  .income-form {
-    padding: 1.5rem;
-  }
+.submit-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
-@media (max-width: 480px) {
-  .form-actions {
+/* Responsive design */
+@media (max-width: 992px) {
+  .add-income-content {
     flex-direction: column;
-    gap: 1rem;
+  }
+  
+  .add-income-sidebar {
+    width: 100%;
+    order: 2;
+  }
+  
+  .add-income-main {
+    order: 1;
+  }
+}
+
+@media (max-width: 768px) {
+  .add-income-page {
+    padding: 1.5rem 1.5rem 6rem;
+  }
+  
+  .add-income-container {
+    max-width: 100%;
+    padding: 0 0.8rem;
+  }
+  
+  .form-actions {
+    flex-direction: column-reverse;
   }
   
   .cancel-button, .submit-button {
     width: 100%;
+  }
+  
+  .income-stats-panel, 
+  .ai-tips-panel,
+  .add-income-form-panel {
+    margin-left: 0.5rem;
+    margin-right: 0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .add-income-page {
+    padding: 1rem 0.8rem 5rem;
+  }
+  
+  .add-income-container {
+    padding: 0 1rem;
+  }
+  
+  .add-income-form-panel {
+    padding: 1.2rem 1.2rem;
+    margin-left: 0.3rem;
+    margin-right: 0.3rem;
+  }
+  
+  .income-stats-panel, 
+  .ai-tips-panel {
+    padding: 1.2rem;
+    margin-left: 0.3rem;
+    margin-right: 0.3rem;
   }
 }

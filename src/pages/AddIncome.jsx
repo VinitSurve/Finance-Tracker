@@ -5,7 +5,6 @@ import { useTheme } from '../context/ThemeContext';
 import { useCurrency } from '../context/CurrencyContext';
 import { usePointsSystem } from '../hooks/usePointsSystem';
 import { supabase } from '../services/supabaseClient';
-import { getCustomReasonsByType } from '../services/reasonService';
 import toast from 'react-hot-toast';
 import Modal from '../components/Modal';
 import CustomReasonManager from '../components/CustomReasonManager';
@@ -26,17 +25,24 @@ const AddIncome = () => {
     customReason: ''
   });
   
-  const [showTip, setShowTip] = useState(false);
-  const [aiTip, setAiTip] = useState('');
+  const [aiTips, setAiTips] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [animateAmount, setAnimateAmount] = useState(false);
   const [accounts, setAccounts] = useState([]);
   const [isLoadingAccounts, setIsLoadingAccounts] = useState(true);
   const [customReasons, setCustomReasons] = useState([]);
   const [isCustomReasonModalOpen, setIsCustomReasonModalOpen] = useState(false);
+  const [incomeStats, setIncomeStats] = useState({
+    monthlyTotal: 0,
+    averageIncome: 0,
+    recentIncome: 0,
+    incomeCount: 0
+  });
+  const [formSubmitAttempted, setFormSubmitAttempted] = useState(false);
   
   const categories = ['Salary', 'Gift', 'Cashback', 'Freelance', 'Investment Return', 'Others'];
-  
+
+  // Load accounts data
   useEffect(() => {
     const loadAccounts = async () => {
       try {
@@ -61,7 +67,7 @@ const AddIncome = () => {
         
         const formattedAccounts = data.map(item => ({
           id: item.id,
-          balance_type_id: item.balance_type_id, // Store the balance_type_id
+          balance_type_id: item.balance_type_id,
           name: item.balance_type?.name || 'Account',
           icon: item.balance_type?.icon || '💰',
           balance: parseFloat(item.amount || 0)
@@ -81,36 +87,101 @@ const AddIncome = () => {
     };
     
     loadAccounts();
+    loadIncomeStats();
+    generateAiTips();
   }, []);
-  
-  useEffect(() => {
-    if (formData.amount && parseFloat(formData.amount) > 1000) {
-      const tips = [
-        "Consider saving 20% of this income for future goals! 🚀",
-        "Great job on the income! How about investing 15% of it? 📈",
-        `Setting aside ${formatAmount(parseFloat(formData.amount) * 0.1)} could help your emergency fund grow! 🛡️`,
-        "Remember: paying yourself first is key to building wealth. 💰",
-        "Split this into 50% needs, 30% wants, and 20% savings for better financial health! ✨"
-      ];
-      setAiTip(tips[Math.floor(Math.random() * tips.length)]);
-      setShowTip(true);
-    } else {
-      setShowTip(false);
-    }
-  }, [formData.amount]);
 
+  // Load custom reasons with correct field name (reason_type instead of type)
   useEffect(() => {
     const loadCustomReasons = async () => {
       try {
-        const reasonsData = await getCustomReasonsByType('income');
-        setCustomReasons(reasonsData);
+        console.log("Fetching custom income reasons...");
+        // Use reason_type instead of type
+        const { data, error } = await supabase
+          .from('custom_reasons')
+          .select('*')
+          .eq('reason_type', 'income') // Using reason_type instead of type
+          .order('created_at', { ascending: false });
+        
+        if (error) throw error;
+        
+        console.log("Received income reasons from DB:", data);
+        
+        if (data && Array.isArray(data)) {
+          setCustomReasons(data);
+        } else {
+          console.warn("No income reasons found or invalid data structure");
+          setCustomReasons([]);
+        }
       } catch (error) {
-        console.error('Error loading custom reasons:', error);
+        console.error('Error loading income reasons:', error);
+        setCustomReasons([]);
       }
     };
 
     loadCustomReasons();
   }, []);
+
+  // Load income statistics
+  const loadIncomeStats = async () => {
+    try {
+      // Get current month's data
+      const currentDate = new Date();
+      const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).toISOString();
+      const lastDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).toISOString();
+      
+      // Fetch monthly income total
+      const { data: monthlyData, error: monthlyError } = await supabase
+        .from('transactions')
+        .select('amount')
+        .eq('type', 'income')
+        .gte('created_at', firstDayOfMonth)
+        .lte('created_at', lastDayOfMonth);
+      
+      if (monthlyError) throw monthlyError;
+      
+      // Calculate monthly total
+      const monthlyTotal = monthlyData.reduce((sum, transaction) => sum + parseFloat(transaction.amount || 0), 0);
+      
+      // Fetch all income transactions for average calculation
+      const { data: allIncomeData, error: allIncomeError } = await supabase
+        .from('transactions')
+        .select('amount, created_at')
+        .eq('type', 'income')
+        .order('created_at', { ascending: false });
+      
+      if (allIncomeError) throw allIncomeError;
+      
+      // Calculate average income
+      const totalIncome = allIncomeData.reduce((sum, transaction) => sum + parseFloat(transaction.amount || 0), 0);
+      const averageIncome = allIncomeData.length > 0 ? totalIncome / allIncomeData.length : 0;
+      
+      // Get most recent income amount
+      const recentIncome = allIncomeData.length > 0 ? parseFloat(allIncomeData[0].amount || 0) : 0;
+      
+      setIncomeStats({
+        monthlyTotal,
+        averageIncome,
+        recentIncome,
+        incomeCount: allIncomeData.length
+      });
+      
+    } catch (error) {
+      console.error('Error loading income statistics:', error);
+    }
+  };
+
+  // Generate AI tips based on data
+  const generateAiTips = () => {
+    const tips = [
+      "Consider saving 20% of your income for future goals! 🚀",
+      "Track your income sources to identify your most profitable activities.",
+      "Set up automatic transfers to savings when you receive income.",
+      "Remember: paying yourself first is key to building wealth. 💰",
+      "Compare your income month-over-month to track your financial growth."
+    ];
+    setAiTips(tips);
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -129,6 +200,8 @@ const AddIncome = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    setFormSubmitAttempted(true);
+    
     if (!formData.amount) {
       toast.error("Please enter an amount");
       return;
@@ -141,6 +214,11 @@ const AddIncome = () => {
     
     if (!formData.accountId) {
       toast.error("Please select an account");
+      return;
+    }
+    
+    if (!formData.customReason) {
+      toast.error("Please select a reason");
       return;
     }
     
@@ -167,11 +245,9 @@ const AddIncome = () => {
         type: 'income',
         note: formData.description || null,
         reason: formData.customReason || null,
-        balance_type_id: selectedAccount.balance_type_id, // Use the correct foreign key
+        balance_type_id: selectedAccount.balance_type_id,
         created_at: formData.date ? new Date(formData.date).toISOString() : new Date().toISOString()
       };
-      
-      console.log('Transaction data being sent:', transactionData);
       
       const { data, error } = await supabase
         .from('transactions')
@@ -179,7 +255,6 @@ const AddIncome = () => {
         .select();
       
       if (error) {
-        console.error('Error details:', error);
         throw error;
       }
       
@@ -192,7 +267,6 @@ const AddIncome = () => {
         .eq('id', formData.accountId);
       
       if (updateError) {
-        console.error('Error updating balance:', updateError);
         throw updateError;
       }
       
@@ -212,202 +286,284 @@ const AddIncome = () => {
   };
 
   const handleReasonAdded = (newReason) => {
-    setCustomReasons([newReason, ...customReasons]);
-    setFormData(prev => ({ ...prev, customReason: newReason.reason_text }));
+    console.log("New income reason added:", newReason);
+    // Make sure we're correctly using reason_type instead of type
+    const formattedReason = {
+      id: newReason.id || Date.now().toString(),
+      reason_text: newReason.reason_text,
+      reason_type: 'income',  // Use reason_type instead of type
+      category: newReason.category || formData.category || ''
+    };
+    
+    // Update state with the new reason
+    setCustomReasons(prevReasons => {
+      const updated = [formattedReason, ...prevReasons];
+      console.log("Updated income reasons:", updated);
+      return updated;
+    });
+    
+    // Set the selected reason
+    setFormData(prev => ({
+      ...prev,
+      customReason: formattedReason.reason_text
+    }));
   };
 
-  const filteredReasons = formData.category 
-    ? customReasons.filter(reason => !reason.category || reason.category === formData.category) 
-    : customReasons;
-  
   return (
-    <div className={`add-income-container ${darkMode ? 'dark' : 'light'}-mode`}>
-      <section className="form-header">
-        <motion.div
-          className="header-content"
+    <div className={`add-income-page ${darkMode ? 'dark' : 'light'}-mode`}>
+      <div className="add-income-container">
+        <motion.div 
+          className="add-income-header"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
           <h1>Add Income</h1>
-          <p>Record your latest earnings</p>
+          <p>Record your latest earnings and grow your finances</p>
         </motion.div>
-      </section>
-      
-      <motion.form 
-        className="income-form"
-        onSubmit={handleSubmit}
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.2 }}
-      >
-        <div className="form-group amount-group">
-          <label htmlFor="amount">Amount</label>
-          <div className="amount-input">
-            <span className="currency-symbol">{currencySymbol}</span>
-            <motion.input
-              animate={animateAmount ? { scale: [1, 1.03, 1] } : {}}
-              type="text"
-              id="amount"
-              name="amount"
-              value={formData.amount}
-              onChange={handleInputChange}
-              placeholder="0.00"
-              disabled={isSubmitting}
-            />
-            {animateAmount && (
-              <motion.span
-                className="money-emoji"
-                initial={{ opacity: 0, y: 10, scale: 0.8 }}
-                animate={{ opacity: [0, 1, 0], y: [-10, -20], scale: 1 }}
-                transition={{ duration: 0.7 }}
-              >
-                💰
-              </motion.span>
-            )}
-          </div>
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="accountId">Select Account</label>
-          {isLoadingAccounts ? (
-            <div className="loading-accounts">Loading accounts...</div>
-          ) : accounts.length === 0 ? (
-            <div className="no-accounts-message">
-              <p>No accounts found. Please add an account first.</p>
-              <button 
-                type="button"
-                className="add-account-btn"
-                onClick={() => navigate('/balances')}
-              >
-                Add Account
-              </button>
-            </div>
-          ) : (
-            <select
-              id="accountId"
-              name="accountId"
-              value={formData.accountId}
-              onChange={(e) => setFormData({ ...formData, accountId: e.target.value })}
-              disabled={isSubmitting}
-              className="account-select"
-            >
-              <option value="">Select account</option>
-              {accounts.map(account => (
-                <option key={account.id} value={account.id}>
-                  {account.icon} {account.name} ({formatAmount(account.balance)})
-                </option>
-              ))}
-            </select>
-          )}
-        </div>
         
-        <div className="form-group">
-          <label htmlFor="category">Source Category</label>
-          <select
-            id="category"
-            name="category"
-            value={formData.category}
-            onChange={handleInputChange}
-            disabled={isSubmitting}
-            className="category-select"
-          >
-            <option value="">Select category</option>
-            {categories.map(category => (
-              <option key={category} value={category}>{category}</option>
-            ))}
-          </select>
-        </div>
-
-        <div className="form-group custom-reason-group">
-          <div className="reason-label-container">
-            <label htmlFor="customReason">Reason</label>
-            <button
-              type="button"
-              className="add-custom-reason-btn"
-              onClick={() => setIsCustomReasonModalOpen(true)}
-            >
-              + Add Custom Reason
-            </button>
-          </div>
-          <select
-            id="customReason"
-            name="customReason"
-            value={formData.customReason}
-            onChange={handleInputChange}
-            disabled={isSubmitting}
-          >
-            <option value="">Select a reason (optional)</option>
-            {filteredReasons.map(reason => (
-              <option key={reason.id} value={reason.reason_text}>
-                {reason.reason_text}
-              </option>
-            ))}
-          </select>
-        </div>
-        
-        <div className="form-group">
-          <label htmlFor="date">Date</label>
-          <input
-            type="date"
-            id="date"
-            name="date"
-            value={formData.date}
-            onChange={handleInputChange}
-            disabled={isSubmitting}
-            className="date-input"
-          />
-        </div>
-        
-        <div className="form-group">
-          <label htmlFor="description">Notes (Optional)</label>
-          <input
-            type="text"
-            id="description"
-            name="description"
-            value={formData.description}
-            onChange={handleInputChange}
-            placeholder="E.g., Salary bonus for April"
-            disabled={isSubmitting}
-            className="notes-input"
-          />
-        </div>
-        
-        {showTip && (
+        <div className="add-income-content">
+          {/* Sidebar with Stats and Tips */}
           <motion.div 
-            className="ai-tip"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
+            className="add-income-sidebar"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
           >
-            <div className="tip-icon">💡</div>
-            <div className="tip-text">
-              <strong>Smart Tip:</strong> {aiTip}
+            {/* Income Stats Panel */}
+            <div className="income-stats-panel">
+              <div className="income-stat-item">
+                <div className="income-stat-icon">📊</div>
+                <div className="income-stat-details">
+                  <div className="income-stat-label">This Month's Income</div>
+                  <div className="income-stat-value">{formatAmount(incomeStats.monthlyTotal)}</div>
+                </div>
+              </div>
+              
+              <div className="income-stat-item">
+                <div className="income-stat-icon">📈</div>
+                <div className="income-stat-details">
+                  <div className="income-stat-label">Average Income</div>
+                  <div className="income-stat-value">{formatAmount(incomeStats.averageIncome)}</div>
+                </div>
+              </div>
+              
+              <div className="income-stat-item">
+                <div className="income-stat-icon">🔄</div>
+                <div className="income-stat-details">
+                  <div className="income-stat-label">Latest Income</div>
+                  <div className="income-stat-value">{formatAmount(incomeStats.recentIncome)}</div>
+                </div>
+              </div>
+              
+              <div className="income-stat-item">
+                <div className="income-stat-icon">🧮</div>
+                <div className="income-stat-details">
+                  <div className="income-stat-label">Total Entries</div>
+                  <div className="income-stat-value">{incomeStats.incomeCount}</div>
+                </div>
+              </div>
+            </div>
+            
+            {/* AI Tips Panel */}
+            <div className="ai-tips-panel">
+              <div className="ai-tips-header">
+                <div className="ai-tips-icon">💡</div>
+                <div className="ai-tips-title">Smart Tips</div>
+              </div>
+              
+              {aiTips.map((tip, index) => (
+                <div className="ai-tip-item" key={index}>
+                  <div className="ai-tip-text">{tip}</div>
+                </div>
+              ))}
             </div>
           </motion.div>
-        )}
-        
-        <div className="form-actions">
-          <button 
-            type="button" 
-            className="cancel-button"
-            onClick={() => navigate('/dashboard')}
-            disabled={isSubmitting}
+          
+          {/* Main Form Content */}
+          <motion.div
+            className="add-income-main"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
           >
-            Cancel
-          </button>
-          <motion.button 
-            type="submit" 
-            className="submit-button"
-            disabled={isSubmitting || accounts.length === 0}
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.97 }}
-          >
-            {isSubmitting ? 'Saving...' : 'Save Income'}
-          </motion.button>
+            <form className="add-income-form-panel" onSubmit={handleSubmit}>
+              {/* Income Amount Section */}
+              <div className="form-section">
+                <h3>Income Details</h3>
+                
+                <div className="form-group amount-group">
+                  <label htmlFor="amount">Amount</label>
+                  <div className="amount-input">
+                    <span className="currency-symbol">{currencySymbol}</span>
+                    <motion.input
+                      animate={animateAmount ? { scale: [1, 1.03, 1] } : {}}
+                      type="text"
+                      id="amount"
+                      name="amount"
+                      value={formData.amount}
+                      onChange={handleInputChange}
+                      placeholder="0.00"
+                      disabled={isSubmitting}
+                    />
+                    {animateAmount && (
+                      <motion.span
+                        className="money-emoji"
+                        initial={{ opacity: 0, y: 10, scale: 0.8 }}
+                        animate={{ opacity: [0, 1, 0], y: [-10, -20], scale: 1 }}
+                        transition={{ duration: 0.7 }}
+                      >
+                        💰
+                      </motion.span>
+                    )}
+                  </div>
+                </div>
+                
+                <div className="form-group">
+                  <label htmlFor="category">Source Category</label>
+                  <select
+                    id="category"
+                    name="category"
+                    value={formData.category}
+                    onChange={handleInputChange}
+                    disabled={isSubmitting}
+                  >
+                    <option value="">Select category</option>
+                    {categories.map(category => (
+                      <option key={category} value={category}>{category}</option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div className="form-group custom-reason-group">
+                  <div className="reason-label-container">
+                    <label htmlFor="customReason">Reason</label>
+                    <button
+                      type="button"
+                      className="add-custom-reason-btn"
+                      onClick={() => setIsCustomReasonModalOpen(true)}
+                    >
+                      + Add Custom Reason
+                    </button>
+                  </div>
+                  <select
+                    id="customReason"
+                    name="customReason"
+                    value={formData.customReason}
+                    onChange={handleInputChange}
+                    disabled={isSubmitting}
+                    className={formSubmitAttempted && !formData.customReason ? "error-border" : ""}
+                    required
+                  >
+                    <option value="">Select a reason</option>
+                    
+                    {/* Explicitly map all custom reasons without any filters */}
+                    {customReasons && customReasons.map(reason => (
+                      <option 
+                        key={`reason-${reason.id}-${reason.reason_text}`}
+                        value={reason.reason_text}
+                      >
+                        {reason.reason_text}
+                      </option>
+                    ))}
+                  </select>
+                  
+                  {formSubmitAttempted && !formData.customReason && (
+                    <div style={{ color: 'red', fontSize: '0.8rem', marginTop: '0.3rem' }}>
+                      Please select a reason or add a custom one
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              {/* Account and Date Section */}
+              <div className="form-section">
+                <h3>Account Information</h3>
+                
+                <div className="form-group">
+                  <label htmlFor="accountId">Select Account</label>
+                  {isLoadingAccounts ? (
+                    <div className="loading-accounts">Loading accounts...</div>
+                  ) : accounts.length === 0 ? (
+                    <div className="no-accounts-message">
+                      <p>No accounts found. Please add an account first.</p>
+                      <button 
+                        type="button"
+                        className="add-account-btn"
+                        onClick={() => navigate('/balances')}
+                      >
+                        Add Account
+                      </button>
+                    </div>
+                  ) : (
+                    <select
+                      id="accountId"
+                      name="accountId"
+                      value={formData.accountId}
+                      onChange={(e) => setFormData({ ...formData, accountId: e.target.value })}
+                      disabled={isSubmitting}
+                    >
+                      <option value="">Select account</option>
+                      {accounts.map(account => (
+                        <option key={account.id} value={account.id}>
+                          {account.icon} {account.name} ({formatAmount(account.balance)})
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+                
+                <div className="form-group">
+                  <label htmlFor="date">Transaction Date</label>
+                  <input
+                    type="date"
+                    id="date"
+                    name="date"
+                    value={formData.date}
+                    onChange={handleInputChange}
+                    disabled={isSubmitting}
+                  />
+                </div>
+                
+                <div className="form-group">
+                  <label htmlFor="description">Notes (Optional)</label>
+                  <textarea
+                    id="description"
+                    name="description"
+                    rows="3"
+                    value={formData.description}
+                    onChange={handleInputChange}
+                    placeholder="Add any additional details about this income"
+                    disabled={isSubmitting}
+                  />
+                </div>
+              </div>
+              
+              {/* Form Actions */}
+              <div className="form-actions">
+                <button 
+                  type="button" 
+                  className="cancel-button"
+                  onClick={() => navigate('/dashboard')}
+                  disabled={isSubmitting}
+                >
+                  Cancel
+                </button>
+                <motion.button 
+                  type="submit" 
+                  className="submit-button"
+                  disabled={isSubmitting || accounts.length === 0}
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                >
+                  {isSubmitting ? 'Saving...' : 'Add Income'}
+                </motion.button>
+              </div>
+            </form>
+          </motion.div>
         </div>
-      </motion.form>
-
+      </div>
+      
       <Modal 
         isOpen={isCustomReasonModalOpen}
         onClose={() => setIsCustomReasonModalOpen(false)}

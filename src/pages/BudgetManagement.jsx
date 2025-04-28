@@ -5,7 +5,6 @@ import { useCurrency } from '../context/CurrencyContext';
 import { supabase } from '../services/supabaseClient';
 import { usePointsSystem } from '../hooks/usePointsSystem';
 import toast from 'react-hot-toast';
-import { getCustomReasonsByTypeAndCategory } from '../services/reasonService';
 import Modal from '../components/Modal';
 import CustomReasonManager from '../components/CustomReasonManager';
 import '../styles/pages/BudgetManagement.css';
@@ -135,22 +134,50 @@ const BudgetManagement = () => {
     }
   };
 
-  // Load custom reasons for budgets
+  // Load custom reasons for budgets - update to use reason_type instead of type
   const loadCustomReasons = async (category) => {
     try {
-      const reasonsData = await getCustomReasonsByTypeAndCategory('budget', category);
-      setCustomReasons(reasonsData);
+      console.log("Fetching budget reasons...");
+      // Use reason_type instead of type
+      const { data, error } = await supabase
+        .from('custom_reasons')
+        .select('*')
+        .eq('reason_type', 'budget') // Using reason_type instead of type
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      console.log("Received budget reasons from DB:", data);
+      
+      // Filter by category if provided
+      const filteredReasons = category 
+        ? data.filter(reason => !reason.category || reason.category === category)
+        : data;
+        
+      setCustomReasons(filteredReasons || []);
     } catch (error) {
-      console.error('Error loading custom reasons for budgets:', error);
+      console.error('Error loading budget reasons:', error);
+      setCustomReasons([]);
     }
   };
 
-  // Handle custom reason addition
+  // Handle custom reason addition - update to use reason_type instead of type
   const handleReasonAdded = (newReason) => {
-    setCustomReasons([newReason, ...customReasons]);
+    // Update the reason with reason_type instead of type
+    const formattedReason = {
+      ...newReason,
+      reason_type: 'budget'  // Use reason_type instead of type
+    };
+    
+    setCustomReasons(prevReasons => {
+      const updated = [formattedReason, ...prevReasons];
+      console.log("Updated budget reasons:", updated);
+      return updated;
+    });
+    
     setFormData(prevData => ({
       ...prevData,
-      reason: newReason.reason_text
+      reason: formattedReason.reason_text
     }));
   };
 

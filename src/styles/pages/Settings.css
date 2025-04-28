@@ -607,7 +607,7 @@
   margin-top: 1rem;
 }
 
-/* Mobile-Friendly Sticky Bottom Navbar */
+/* Mobile-Friendly Sticky Bottom Navbar - Updated */
 .bottom-navbar {
   display: none;
   position: fixed;
@@ -618,26 +618,56 @@
   box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.2);
   border-top: 1px solid var(--color-border);
   z-index: 999;
-  padding: 0.75rem 1rem;
   transition: var(--transition-default);
+  flex-direction: column;
+}
+
+/* Page title indicator */
+.bottom-navbar-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  background-color: var(--color-accent);
+  color: white;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.current-page-icon {
+  font-size: 1.1rem;
+  margin-right: 0.5rem;
+}
+
+.current-page-name {
+  text-transform: capitalize;
 }
 
 .bottom-navbar-tabs {
   display: flex;
   justify-content: space-around;
   align-items: center;
+  padding: 0.75rem 1rem;
 }
 
 .bottom-navbar-tab {
   display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  color: var(--color-textSecondary);
+  background: none;
+  border: none;
+  transition: var(--transition-default);
+  cursor: pointer;
+}
+
+.tab-content {
+  display: flex;
   flex-direction: column;
   align-items: center;
   gap: 0.3rem;
-  padding: 0.5rem;
-  color: var(--color-textSecondary);
-  text-decoration: none;
-  font-size: 0.8rem;
-  transition: var(--transition-default);
 }
 
 .bottom-navbar-tab.active {
@@ -646,6 +676,11 @@
 
 .bottom-navbar-icon {
   font-size: 1.4rem;
+}
+
+.bottom-navbar-label {
+  font-size: 0.7rem;
+  font-weight: 500;
 }
 
 /* Chart bar styles for income/expense visualizations */
@@ -662,6 +697,35 @@
 
 .expense-bar {
   background: linear-gradient(to right, var(--accent-red), #FF6B6B);
+}
+
+/* Do Not Disturb specific styles */
+.dnd-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.dnd-duration-select {
+  padding: 0.4rem 0.7rem;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  background-color: var(--color-secondaryBg);
+  color: var(--color-textPrimary);
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+}
+
+.dnd-duration-select:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1);
+}
+
+.dnd-active {
+  font-weight: 500;
+  color: var(--color-warning);
+  margin-left: 4px;
 }
 
 /* Responsive design */
@@ -745,11 +809,11 @@
   
   /* Show bottom navbar on mobile */
   .bottom-navbar {
-    display: block;
+    display: flex;
   }
   
   .settings-page {
-    padding-bottom: calc(4rem + 70px);
+    padding-bottom: calc(4rem + 95px); /* Adjusted for the new bottom navbar height */
   }
 }
 

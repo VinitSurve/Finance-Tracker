@@ -1,228 +1,432 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  getCustomReasonsByType, 
-  getCustomReasonsByTypeAndCategory, 
-  addCustomReason, 
-  updateCustomReason, 
-  deleteCustomReason 
-} from '../services/reasonService';
+import { addCustomReason, getCustomReasonsByType, deleteCustomReason } from '../services/reasonService';
 import toast from 'react-hot-toast';
 import '../styles/components/CustomReasonManager.css';
 
-const CustomReasonManager = ({ reasonType, categoryId, onClose, onReasonAdded }) => {
+const CustomReasonManager = ({ reasonType = 'income', category, onClose, onReasonAdded }) => {
   const [reasons, setReasons] = useState([]);
   const [newReason, setNewReason] = useState('');
-  const [editingId, setEditingId] = useState(null);
-  const [editText, setEditText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedTab, setSelectedTab] = useState('add'); // 'add' or 'browse'
+  const [confirmDelete, setConfirmDelete] = useState(null);
+  const [expandedReason, setExpandedReason] = useState(null);
 
   useEffect(() => {
-    const fetchReasons = async () => {
-      setIsLoading(true);
-      try {
-        let data;
-        if (categoryId) {
-          data = await getCustomReasonsByTypeAndCategory(reasonType, categoryId);
-        } else {
-          data = await getCustomReasonsByType(reasonType);
-        }
-        
-        // Map the category data to match the expected format
-        const formattedData = data.map(item => ({
-          id: item.id,
-          reason_text: item.category_name,
-          reason_type: reasonType,
-          category_id: categoryId || null
-        }));
-        
-        setReasons(formattedData);
-      } catch (error) {
-        console.error('Error fetching reasons:', error);
-        toast.error('Failed to load custom reasons');
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    loadReasons();
+  }, [reasonType]);
 
-    fetchReasons();
-  }, [reasonType, categoryId]);
+  const loadReasons = async () => {
+    try {
+      const data = await getCustomReasonsByType(reasonType);
+      setReasons(data);
+    } catch (error) {
+      console.error('Error loading reasons:', error);
+      toast.error('Failed to load custom reasons');
+    }
+  };
 
   const handleAddReason = async (e) => {
     e.preventDefault();
-    if (!newReason.trim()) return;
+    
+    if (!newReason.trim()) {
+      toast.error('Please enter a reason');
+      return;
+    }
 
-    setIsLoading(true);
     try {
-      const reason = {
+      setIsLoading(true);
+      
+      const reasonData = {
         reason_text: newReason.trim(),
-        reason_type: reasonType,
-        category_id: categoryId || null
+        type: reasonType,
+        category: category
       };
       
-      const added = await addCustomReason(reason);
+      const addedReason = await addCustomReason(reasonData);
       
-      // Transform the response to match expected format
-      const formattedReason = {
-        id: added.id,
-        reason_text: added.category_name,
-        reason_type: reasonType,
-        category_id: categoryId || null
-      };
-      
-      setReasons([formattedReason, ...reasons]);
+      setReasons([addedReason, ...reasons]);
       setNewReason('');
-      toast.success('Custom reason added!');
+      setSelectedTab('browse');
+      
+      toast.success('Custom reason added successfully!', {
+        style: {
+          border: '1px solid #10b981',
+          padding: '16px',
+          color: '#10b981',
+        },
+        iconTheme: {
+          primary: '#10b981',
+          secondary: '#FFFAEE',
+        },
+      });
       
       if (onReasonAdded) {
-        onReasonAdded(formattedReason);
+        onReasonAdded(addedReason);
       }
     } catch (error) {
+      console.error('Error adding reason:', error);
       toast.error('Failed to add custom reason');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleEditReason = async (id) => {
-    if (!editText.trim()) {
-      setEditingId(null);
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      const updated = await updateCustomReason(id, { reason_text: editText });
-      
-      // Transform the response to match expected format
-      const formattedReason = {
-        id: updated.id,
-        reason_text: updated.category_name,
-        reason_type: reasonType,
-        category_id: categoryId || null
-      };
-      
-      setReasons(reasons.map(r => r.id === id ? formattedReason : r));
-      setEditingId(null);
-      toast.success('Custom reason updated!');
-    } catch (error) {
-      toast.error('Failed to update custom reason');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const handleDeleteReason = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this reason?')) {
-      return;
-    }
-
-    setIsLoading(true);
+    setConfirmDelete(null);
+    
+    if (isDeleting) return;
+    
     try {
+      setIsDeleting(true);
       await deleteCustomReason(id);
-      setReasons(reasons.filter(r => r.id !== id));
-      toast.success('Custom reason deleted');
+      setReasons(reasons.filter(reason => reason.id !== id));
+      
+      toast.success('Custom reason deleted', {
+        style: {
+          border: '1px solid #ef4444',
+          padding: '16px',
+          color: '#ef4444',
+        },
+        iconTheme: {
+          primary: '#ef4444',
+          secondary: '#FFFAEE',
+        },
+      });
+      
     } catch (error) {
+      console.error('Error deleting reason:', error);
       toast.error('Failed to delete custom reason');
     } finally {
-      setIsLoading(false);
+      setIsDeleting(false);
     }
   };
 
-  const startEditing = (reason) => {
-    setEditingId(reason.id);
-    setEditText(reason.reason_text);
+  const filteredReasons = searchQuery
+    ? reasons.filter(reason => 
+        reason.reason_text.toLowerCase().includes(searchQuery.toLowerCase()))
+    : reasons;
+    
+  const getTitle = () => {
+    switch(reasonType) {
+      case 'income': return 'Income Reasons';
+      case 'expense': return 'Expense Reasons';
+      case 'budget': return 'Budget Reasons';
+      default: return 'Custom Reasons';
+    }
   };
+  
+  const getThemeColor = () => {
+    switch(reasonType) {
+      case 'income': return 'success';
+      case 'expense': return 'error';
+      case 'budget': return 'primary';
+      default: return 'primary';
+    }
+  };
+  
+  const themeColor = getThemeColor();
 
   return (
-    <div className="custom-reason-manager">
+    <motion.div 
+      className={`custom-reason-manager theme-${themeColor}`}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 10 }}
+    >
       <div className="reason-manager-header">
-        <h3>Manage Custom Reasons</h3>
-        <button className="close-button" onClick={onClose}>×</button>
-      </div>
-
-      <form className="add-reason-form" onSubmit={handleAddReason}>
-        <input
-          type="text"
-          value={newReason}
-          onChange={(e) => setNewReason(e.target.value)}
-          placeholder="Enter new custom reason..."
-          disabled={isLoading}
-          autoFocus
-        />
-        <button 
-          type="submit" 
-          className="add-reason-btn"
-          disabled={isLoading || !newReason.trim()}
-        >
-          Add
-        </button>
-      </form>
-
-      <div className="reasons-list-container">
-        {isLoading && reasons.length === 0 ? (
-          <div className="loading-state">Loading custom reasons...</div>
-        ) : reasons.length === 0 ? (
-          <div className="empty-state">
-            No custom reasons yet. Add your first one above!
+        <div className="reason-title-container">
+          <div className="reason-icon">
+            {reasonType === 'income' ? '💰' : reasonType === 'expense' ? '💸' : '🎯'}
           </div>
-        ) : (
-          <ul className="reasons-list">
-            {reasons.map((reason) => (
-              <li key={reason.id} className="reason-item">
-                {editingId === reason.id ? (
-                  <div className="edit-reason-form">
+          <div className="reason-title-content">
+            <h3 className="reason-manager-title">{getTitle()}</h3>
+            <p className="reason-manager-subtitle">
+              {reasonType === 'income' 
+                ? 'Organize your income sources' 
+                : reasonType === 'expense' 
+                ? 'Track why you spend money' 
+                : 'Define your budget purposes'}
+            </p>
+          </div>
+        </div>
+        <button className="close-icon-button" onClick={onClose} aria-label="Close">
+          ✕
+        </button>
+      </div>
+      
+      <div className="reason-manager-tabs">
+        <button 
+          className={`tab-button ${selectedTab === 'add' ? 'active' : ''}`}
+          onClick={() => setSelectedTab('add')}
+        >
+          <span className="tab-icon">+</span>
+          <span>Add New</span>
+        </button>
+        <button 
+          className={`tab-button ${selectedTab === 'browse' ? 'active' : ''}`}
+          onClick={() => setSelectedTab('browse')}
+        >
+          <span className="tab-icon">🔍</span>
+          <span>Browse ({reasons.length})</span>
+        </button>
+      </div>
+      
+      <div className="reason-manager-content">
+        <AnimatePresence mode="wait">
+          {selectedTab === 'add' ? (
+            <motion.div
+              key="add-form"
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -10 }}
+              transition={{ duration: 0.2 }}
+              className="add-reason-section"
+            >
+              <form className="reason-form" onSubmit={handleAddReason}>
+                <div className="input-container">
+                  <input
+                    type="text"
+                    value={newReason}
+                    onChange={(e) => setNewReason(e.target.value)}
+                    placeholder="Enter a custom reason..."
+                    disabled={isLoading}
+                    className="reason-input"
+                    autoFocus
+                  />
+                  <motion.button 
+                    type="submit" 
+                    className="add-reason-button"
+                    disabled={isLoading || !newReason.trim()}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    {isLoading ? 
+                      <span className="loading-spinner"></span> : 
+                      selectedTab === 'add' ? 'Add Reason' : 'Save'
+                    }
+                  </motion.button>
+                </div>
+                
+                {category && (
+                  <div className="category-tag">
+                    <span className="tag-text">Category: {category}</span>
+                  </div>
+                )}
+                
+                <div className="helper-text">
+                  {reasonType === 'income' ? 
+                    'Examples: Monthly Salary, Freelance Project, Dividend Payment' : 
+                    reasonType === 'expense' ? 
+                    'Examples: Groceries Shopping, Utility Bill, Coffee with Friends' : 
+                    'Examples: Emergency Fund, Vacation Savings, Home Repair Budget'}
+                </div>
+              </form>
+              
+              {reasons.length > 0 && (
+                <div className="quick-select-section">
+                  <h4>Recently Added</h4>
+                  <div className="quick-reasons">
+                    {reasons.slice(0, 3).map(reason => (
+                      <motion.div 
+                        key={reason.id}
+                        className="quick-reason-item"
+                        whileHover={{ scale: 1.03 }}
+                        onClick={() => {
+                          if (onReasonAdded) {
+                            onReasonAdded(reason);
+                            onClose();
+                          }
+                        }}
+                      >
+                        <span className="reason-chip-text">{reason.reason_text}</span>
+                      </motion.div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          ) : (
+            <motion.div
+              key="browse-section"
+              initial={{ opacity: 0, x: 10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 10 }}
+              transition={{ duration: 0.2 }}
+              className="browse-reason-section"
+            >
+              {reasons.length > 0 ? (
+                <>
+                  <div className="search-container">
+                    <div className="search-icon">🔍</div>
                     <input
                       type="text"
-                      value={editText}
-                      onChange={(e) => setEditText(e.target.value)}
-                      disabled={isLoading}
-                      autoFocus
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Search reasons..."
+                      className="search-input"
                     />
-                    <div className="edit-actions">
+                    {searchQuery && (
                       <button 
-                        onClick={() => handleEditReason(reason.id)}
-                        disabled={isLoading}
+                        className="clear-search"
+                        onClick={() => setSearchQuery('')}
                       >
-                        Save
+                        ✕
                       </button>
-                      <button 
-                        onClick={() => setEditingId(null)}
-                        disabled={isLoading}
-                      >
-                        Cancel
-                      </button>
-                    </div>
+                    )}
                   </div>
-                ) : (
-                  <>
-                    <span className="reason-text">{reason.reason_text}</span>
-                    <div className="reason-actions">
-                      <button 
-                        className="edit-btn" 
-                        onClick={() => startEditing(reason)}
-                        disabled={isLoading}
-                        aria-label="Edit reason"
-                      >
-                        ✏️
-                      </button>
-                      <button 
-                        className="delete-btn" 
-                        onClick={() => handleDeleteReason(reason.id)}
-                        disabled={isLoading}
-                        aria-label="Delete reason"
-                      >
-                        🗑️
-                      </button>
-                    </div>
-                  </>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
+                  
+                  <div className="reasons-list">
+                    <AnimatePresence>
+                      {filteredReasons.length === 0 ? (
+                        <motion.div 
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          className="no-reasons"
+                        >
+                          No matching reasons found
+                        </motion.div>
+                      ) : (
+                        filteredReasons.map(reason => (
+                          <motion.div 
+                            layout
+                            key={reason.id} 
+                            className={`reason-item ${expandedReason === reason.id ? 'expanded' : ''}`}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            transition={{ duration: 0.2 }}
+                          >
+                            <div 
+                              className="reason-content" 
+                              onClick={() => {
+                                if (confirmDelete !== reason.id) {
+                                  setExpandedReason(expandedReason === reason.id ? null : reason.id);
+                                }
+                              }}
+                            >
+                              <div className="reason-text-container">
+                                <span className="reason-indicator"></span>
+                                <span className="reason-text">{reason.reason_text}</span>
+                              </div>
+                              
+                              <div className="reason-actions">
+                                {confirmDelete === reason.id ? (
+                                  <div className="confirm-delete">
+                                    <span>Delete?</span>
+                                    <button 
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDeleteReason(reason.id);
+                                      }}
+                                      className="confirm-yes"
+                                    >
+                                      Yes
+                                    </button>
+                                    <button 
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setConfirmDelete(null);
+                                      }}
+                                      className="confirm-no"
+                                    >
+                                      No
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (onReasonAdded) {
+                                          onReasonAdded(reason);
+                                          onClose();
+                                        }
+                                      }}
+                                      className="select-reason-button"
+                                      aria-label="Use this reason"
+                                    >
+                                      Use
+                                    </button>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setConfirmDelete(reason.id);
+                                      }}
+                                      className="delete-reason-button"
+                                      disabled={isDeleting}
+                                      aria-label="Delete reason"
+                                    >
+                                      ×
+                                    </button>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                            
+                            <AnimatePresence>
+                              {expandedReason === reason.id && (
+                                <motion.div 
+                                  initial={{ opacity: 0, height: 0 }}
+                                  animate={{ opacity: 1, height: 'auto' }}
+                                  exit={{ opacity: 0, height: 0 }}
+                                  className="reason-details"
+                                >
+                                  <div className="detail-item">
+                                    <span className="detail-label">Created:</span>
+                                    <span className="detail-value">
+                                      {new Date(reason.created_at).toLocaleDateString()}
+                                    </span>
+                                  </div>
+                                  {reason.category && (
+                                    <div className="detail-item">
+                                      <span className="detail-label">Category:</span>
+                                      <span className="detail-value category-value">
+                                        {reason.category}
+                                      </span>
+                                    </div>
+                                  )}
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                          </motion.div>
+                        ))
+                      )}
+                    </AnimatePresence>
+                  </div>
+                </>
+              ) : (
+                <div className="empty-reasons">
+                  <div className="empty-icon">🗒️</div>
+                  <h4>No {reasonType} reasons yet</h4>
+                  <p>Create your first reason to get started!</p>
+                  <button 
+                    className="create-first-reason" 
+                    onClick={() => setSelectedTab('add')}
+                  >
+                    Create Your First Reason
+                  </button>
+                </div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
-    </div>
+      
+      <div className="reason-manager-actions">
+        <motion.button 
+          onClick={onClose} 
+          className="close-button"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          Close
+        </motion.button>
+      </div>
+    </motion.div>
   );
 };
 

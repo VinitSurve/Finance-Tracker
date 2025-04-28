@@ -12,6 +12,9 @@ const Settings = () => {
   const { currency, setCurrency } = useCurrency();
   const [selectedCurrency, setSelectedCurrency] = useState(currency);
   const [notifications, setNotifications] = useState(true);
+  const [doNotDisturb, setDoNotDisturb] = useState(false); // New DND state
+  const [dndDuration, setDndDuration] = useState('1h'); // Default 1 hour
+  const [dndEndTime, setDndEndTime] = useState(null); // When DND will end
   const [dataExported, setDataExported] = useState(false);
   const [userProfile, setUserProfile] = useState({
     name: 'Vinitt',
@@ -48,6 +51,91 @@ const Settings = () => {
     setNotifications(!notifications);
     toast.success(`Notifications ${!notifications ? 'enabled' : 'disabled'}`);
   };
+  
+  // Handler for toggling Do Not Disturb mode
+  const handleDndToggle = () => {
+    if (!doNotDisturb) {
+      // Calculate end time based on selected duration
+      const endTime = new Date();
+      switch(dndDuration) {
+        case '30m':
+          endTime.setMinutes(endTime.getMinutes() + 30);
+          break;
+        case '1h':
+          endTime.setHours(endTime.getHours() + 1);
+          break;
+        case '8h':
+          endTime.setHours(endTime.getHours() + 8);
+          break;
+        case '24h':
+          endTime.setHours(endTime.getHours() + 24);
+          break;
+        default:
+          endTime.setHours(endTime.getHours() + 1);
+      }
+      setDndEndTime(endTime);
+      
+      // Store in localStorage
+      localStorage.setItem('dnd_end_time', endTime.toISOString());
+      localStorage.setItem('dnd_enabled', 'true');
+      
+      toast.success(`Notifications paused ${getDndDurationText()}`);
+    } else {
+      setDndEndTime(null);
+      localStorage.removeItem('dnd_end_time');
+      localStorage.removeItem('dnd_enabled');
+      toast.success('Notifications resumed');
+    }
+    
+    setDoNotDisturb(!doNotDisturb);
+  };
+  
+  // Handle DND duration changes
+  const handleDndDurationChange = (e) => {
+    setDndDuration(e.target.value);
+  };
+  
+  // Text showing how long notifications will be paused
+  const getDndDurationText = () => {
+    switch(dndDuration) {
+      case '30m': return 'for 30 minutes';
+      case '1h': return 'for 1 hour';
+      case '8h': return 'for 8 hours';
+      case '24h': return 'for 24 hours';
+      default: return 'for 1 hour';
+    }
+  };
+  
+  // Check for existing DND status on load
+  useEffect(() => {
+    const storedEndTime = localStorage.getItem('dnd_end_time');
+    const dndEnabled = localStorage.getItem('dnd_enabled') === 'true';
+    
+    if (storedEndTime && dndEnabled) {
+      const endTime = new Date(storedEndTime);
+      const now = new Date();
+      
+      if (endTime > now) {
+        // DND is still active
+        setDoNotDisturb(true);
+        setDndEndTime(endTime);
+        
+        // Set timeout to disable DND when it expires
+        const timeRemaining = endTime.getTime() - now.getTime();
+        setTimeout(() => {
+          setDoNotDisturb(false);
+          setDndEndTime(null);
+          localStorage.removeItem('dnd_end_time');
+          localStorage.removeItem('dnd_enabled');
+          toast.success('Do Not Disturb mode ended. Notifications resumed.');
+        }, timeRemaining);
+      } else {
+        // DND has expired, clear it
+        localStorage.removeItem('dnd_end_time');
+        localStorage.removeItem('dnd_enabled');
+      }
+    }
+  }, []);
 
   // Handler for exporting user data
   const handleExportData = () => {
@@ -309,6 +397,43 @@ const Settings = () => {
                       </label>
                     </div>
                   </div>
+                  
+                  {/* New Do Not Disturb Setting */}
+                  <div className="setting-item">
+                    <div className="setting-info">
+                      <div className="setting-title">Do Not Disturb</div>
+                      <div className="setting-description">
+                        Temporarily pause all notifications
+                        {doNotDisturb && dndEndTime && (
+                          <span className="dnd-active"> until {dndEndTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="setting-control dnd-controls">
+                      {notifications && (
+                        <select 
+                          className="dnd-duration-select" 
+                          value={dndDuration}
+                          onChange={handleDndDurationChange}
+                          disabled={doNotDisturb}
+                        >
+                          <option value="30m">30 minutes</option>
+                          <option value="1h">1 hour</option>
+                          <option value="8h">8 hours</option>
+                          <option value="24h">24 hours</option>
+                        </select>
+                      )}
+                      <label className="toggle-switch">
+                        <input 
+                          type="checkbox" 
+                          checked={doNotDisturb}
+                          onChange={handleDndToggle}
+                          disabled={!notifications}
+                        />
+                        <span className="toggle-slider"></span>
+                      </label>
+                    </div>
+                  </div>
                 </div>
               </motion.div>
             )}
@@ -490,39 +615,60 @@ const Settings = () => {
           </div>
         </div>
         
-        {/* Add mobile bottom navbar */}
+        {/* Add mobile bottom navbar with page name */}
         <div className="bottom-navbar">
           <div className="bottom-navbar-tabs">
             <button 
               className={`bottom-navbar-tab ${activeTab === 'profile' ? 'active' : ''}`}
               onClick={() => setActiveTab('profile')}
             >
-              <span className="bottom-navbar-icon">👤</span>
-              <span>Profile</span>
+              <div className="tab-content">
+                <span className="bottom-navbar-icon">👤</span>
+                <span className="bottom-navbar-label">Profile</span>
+              </div>
             </button>
             <button 
               className={`bottom-navbar-tab ${activeTab === 'preferences' ? 'active' : ''}`}
               onClick={() => setActiveTab('preferences')}
             >
-              <span className="bottom-navbar-icon">⚙️</span>
-              <span>Preferences</span>
+              <div className="tab-content">
+                <span className="bottom-navbar-icon">⚙️</span>
+                <span className="bottom-navbar-label">Preferences</span>
+              </div>
             </button>
             <button 
               className={`bottom-navbar-tab ${activeTab === 'security' ? 'active' : ''}`}
               onClick={() => setActiveTab('security')}
             >
-              <span className="bottom-navbar-icon">🔒</span>
-              <span>Security</span>
+              <div className="tab-content">
+                <span className="bottom-navbar-icon">🔒</span>
+                <span className="bottom-navbar-label">Security</span>
+              </div>
             </button>
             <button 
               className={`bottom-navbar-tab ${activeTab === 'data' ? 'active' : ''}`}
               onClick={() => setActiveTab('data')}
             >
-              <span className="bottom-navbar-icon">📊</span>
-              <span>Data</span>
+              <div className="tab-content">
+                <span className="bottom-navbar-icon">📊</span>
+                <span className="bottom-navbar-label">Data</span>
+              </div>
             </button>
           </div>
+          
+          {/* Page title indicator */}
+          <div className="bottom-navbar-title">
+            <span className="current-page-icon">
+              {activeTab === 'profile' ? '👤' : 
+               activeTab === 'preferences' ? '⚙️' :
+               activeTab === 'security' ? '🔒' : '📊'}
+            </span>
+            <span className="current-page-name">
+              {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Settings
+            </span>
+          </div>
         </div>
+        
       </div>
     </div>
   );

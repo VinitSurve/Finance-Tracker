@@ -29,6 +29,7 @@ const Transactions = () => {
   const [filters, setFilters] = useState({
     type: 'all',
     category: 'all',
+    reason: 'all',
     startDate: '',
     endDate: '',
     search: '',
@@ -40,6 +41,12 @@ const Transactions = () => {
     entriesPerPage: 10,
     totalEntries: 0,
     totalPages: 1,
+  });
+
+  // Add this state to track all reasons
+  const [allReasons, setAllReasons] = useState({
+    income: [],
+    expense: []
   });
   
   // Load transactions on component mount
@@ -54,6 +61,34 @@ const Transactions = () => {
     }
   }, [filters, transactions, activeTab]);
   
+  // Update reason filter when tab or category filter changes
+  useEffect(() => {
+    // Reset reason filter when changing transaction type tab
+    setFilters(prev => ({...prev, reason: 'all'}));
+  }, [activeTab]);
+
+  // Make sure we load all reasons, including custom ones
+  useEffect(() => {
+    // Extract all unique reasons including custom ones
+    const allReasons = {
+      income: [],
+      expense: []
+    };
+    
+    transactions.forEach(t => {
+      if (t.type === 'income' && t.reason && !allReasons.income.includes(t.reason)) {
+        allReasons.income.push(t.reason);
+      } else if (t.type === 'expense' && t.reason && !allReasons.expense.includes(t.reason)) {
+        allReasons.expense.push(t.reason);
+      }
+    });
+    
+    // Update reasons state if we have new ones
+    if (allReasons.income.length > 0 || allReasons.expense.length > 0) {
+      setAllReasons(allReasons);
+    }
+  }, [transactions]);
+
   // Fetch transactions from the database
   const fetchTransactions = async () => {
     try {
@@ -183,6 +218,11 @@ const Transactions = () => {
       filtered = filtered.filter(t => t.category === filters.category);
     }
     
+    // Modify the filter by reason logic to make it more robust
+    if (filters.reason && filters.reason !== 'all') {
+      filtered = filtered.filter(t => t.reason === filters.reason);
+    }
+    
     // Filter by date range
     if (filters.startDate) {
       filtered = filtered.filter(t => new Date(t.created_at) >= new Date(filters.startDate));
@@ -219,6 +259,7 @@ const Transactions = () => {
     setFilters({
       type: 'all',
       category: 'all',
+      reason: 'all',
       startDate: '',
       endDate: '',
       search: '',
@@ -266,7 +307,48 @@ const Transactions = () => {
     return categories;
   };
   
+  // Get unique reasons from transactions based on current type filter
+  const getReasons = () => {
+    const reasonsFromTransactions = {
+      income: [],
+      expense: []
+    };
+    
+    transactions.forEach(t => {
+      if (t.type === 'income' && t.reason && !reasonsFromTransactions.income.includes(t.reason)) {
+        reasonsFromTransactions.income.push(t.reason);
+      } else if (t.type === 'expense' && t.reason && !reasonsFromTransactions.expense.includes(t.reason)) {
+        reasonsFromTransactions.expense.push(t.reason);
+      }
+    });
+    
+    // Sort reasons alphabetically for better UX
+    reasonsFromTransactions.income.sort();
+    reasonsFromTransactions.expense.sort();
+    
+    return reasonsFromTransactions;
+  };
+  
   const categories = getCategories();
+  const reasons = getReasons();
+
+  // Get filtered reasons based on active tab or selected category
+  const getFilteredReasons = () => {
+    if (activeTab === 'income') {
+      return reasons.income;
+    } else if (activeTab === 'expense') {
+      return reasons.expense;
+    } else if (filters.category !== 'all') {
+      // Check if the selected category belongs to income or expense
+      const categoryType = categories.income.includes(filters.category) ? 'income' : 'expense';
+      return categoryType === 'income' ? reasons.income : reasons.expense;
+    } else {
+      // When in 'all' tab and no category filter
+      return [...reasons.income, ...reasons.expense];
+    }
+  };
+
+  const filteredReasons = getFilteredReasons();
 
   // Get category icon based on name
   const getCategoryIcon = (type, category) => {
@@ -400,7 +482,11 @@ const Transactions = () => {
                     <select 
                       className="filter-select"
                       value={filters.category}
-                      onChange={(e) => handleFilterChange('category', e.target.value)}
+                      onChange={(e) => {
+                        // Reset reason when category changes
+                        handleFilterChange('category', e.target.value);
+                        handleFilterChange('reason', 'all');
+                      }}
                     >
                       <option value="all">All Categories</option>
                       {activeTab === 'income' || activeTab === 'all' ? (
@@ -419,6 +505,79 @@ const Transactions = () => {
                         </optgroup>
                       ) : null}
                     </select>
+                  </div>
+                  
+                  <div className="filter-group">
+                    <label>Reason <span style={{ color: 'red' }}>*</span></label>
+                    <select 
+                      className="filter-select"
+                      value={filters.reason}
+                      onChange={(e) => handleFilterChange('reason', e.target.value)}
+                      style={filters.reason === 'all' ? { borderColor: 'red' } : {}}
+                    >
+                      <option value="all">Select a Reason (Required)</option>
+                      {activeTab === 'income' ? (
+                        <optgroup label="Income Reasons">
+                          {reasons.income.length > 0 ? 
+                            reasons.income.map(reason => (
+                              <option key={`reason-${reason}`} value={reason}>{reason}</option>
+                            )) : 
+                            <option value="" disabled>No income reasons found</option>
+                          }
+                        </optgroup>
+                      ) : activeTab === 'expense' ? (
+                        <optgroup label="Expense Reasons">
+                          {reasons.expense.length > 0 ? 
+                            reasons.expense.map(reason => (
+                              <option key={`reason-${reason}`} value={reason}>{reason}</option>
+                            )) : 
+                            <option value="" disabled>No expense reasons found</option>
+                          }
+                        </optgroup>
+                      ) : filters.category !== 'all' && categories.income.includes(filters.category) ? (
+                        <optgroup label="Income Reasons">
+                          {reasons.income.length > 0 ? 
+                            reasons.income.map(reason => (
+                              <option key={`reason-${reason}`} value={reason}>{reason}</option>
+                            )) : 
+                            <option value="" disabled>No income reasons found</option>
+                          }
+                        </optgroup>
+                      ) : filters.category !== 'all' && categories.expense.includes(filters.category) ? (
+                        <optgroup label="Expense Reasons">
+                          {reasons.expense.length > 0 ? 
+                            reasons.expense.map(reason => (
+                              <option key={`reason-${reason}`} value={reason}>{reason}</option>
+                            )) : 
+                            <option value="" disabled>No expense reasons found</option>
+                          }
+                        </optgroup>
+                      ) : (
+                        <>
+                          <optgroup label="Income Reasons">
+                            {reasons.income.length > 0 ? 
+                              reasons.income.map(reason => (
+                                <option key={`income-${reason}`} value={reason}>{reason}</option>
+                              )) : 
+                              <option value="" disabled>No income reasons found</option>
+                            }
+                          </optgroup>
+                          <optgroup label="Expense Reasons">
+                            {reasons.expense.length > 0 ? 
+                              reasons.expense.map(reason => (
+                                <option key={`expense-${reason}`} value={reason}>{reason}</option>
+                              )) : 
+                              <option value="" disabled>No expense reasons found</option>
+                            }
+                          </optgroup>
+                        </>
+                      )}
+                    </select>
+                    {filters.reason === 'all' && (
+                      <div style={{ color: 'red', fontSize: '0.8rem', marginTop: '0.3rem' }}>
+                        Please select a reason
+                      </div>
+                    )}
                   </div>
                   
                   <div className="filter-group">
@@ -469,30 +628,6 @@ const Transactions = () => {
                   </div>
                 </div>
               </div>
-              
-              <div className="sidebar-section">
-                <div className="sidebar-header">
-                  <h3>Quick Actions</h3>
-                </div>
-                <div className="sidebar-content">
-                  <div className="action-buttons">
-                    <button 
-                      className="action-button income-action"
-                      onClick={() => navigateToAddTransaction('income')}
-                    >
-                      <span className="action-icon">+</span>
-                      <span>Add Income</span>
-                    </button>
-                    <button 
-                      className="action-button expense-action"
-                      onClick={() => navigateToAddTransaction('expense')}
-                    >
-                      <span className="action-icon">-</span>
-                      <span>Add Expense</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
             </motion.div>
 
             {/* Transaction List Main Content */}
@@ -538,18 +673,20 @@ const Transactions = () => {
                     <div className="empty-icon">📊</div>
                     <h3 className="empty-title">No transactions found</h3>
                     <p className="empty-description">
-                      {filters.category !== 'all' || filters.search || filters.startDate || filters.endDate
+                      {filters.category !== 'all' || filters.reason !== 'all' || filters.search || filters.startDate || filters.endDate
                         ? "Try adjusting your filters to see more results."
                         : "Start by adding income or expenses from their respective pages."}
                     </p>
-                    <div className="empty-actions">
-                      <button onClick={() => navigateToAddTransaction('income')} className="income-action">
-                        Add Income
-                      </button>
-                      <button onClick={() => navigateToAddTransaction('expense')} className="expense-action">
-                        Add Expense
-                      </button>
-                    </div>
+                    {(filters.category === 'all' && filters.reason === 'all' && !filters.search && !filters.startDate && !filters.endDate) && (
+                      <div className="empty-actions">
+                        <button onClick={() => navigateToAddTransaction('income')} className="income-action">
+                          Add Income
+                        </button>
+                        <button onClick={() => navigateToAddTransaction('expense')} className="expense-action">
+                          Add Expense
+                        </button>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <>
@@ -575,6 +712,9 @@ const Transactions = () => {
                               <div className="transaction-meta">
                                 <span className="transaction-account">
                                   {transaction.accountIcon} {transaction.accountName}
+                                </span>
+                                <span className="transaction-reason">
+                                  {transaction.reason && `Reason: ${transaction.reason}`}
                                 </span>
                                 <span className="transaction-date">{transaction.formattedDate}</span>
                               </div>
@@ -662,21 +802,28 @@ const Transactions = () => {
           </div>
         </div>
         
-        {/* Mobile Action Buttons */}
-        <div className="mobile-actions">
-          <button 
-            className="mobile-action income-action"
-            onClick={() => navigateToAddTransaction('income')}
-          >
-            + Add Income
-          </button>
-          <button 
-            className="mobile-action expense-action"
-            onClick={() => navigateToAddTransaction('expense')}
-          >
-            + Add Expense
-          </button>
-        </div>
+        {/* Mobile Action Buttons - Only show when there are no transactions and no filters applied */}
+        {filteredTransactions.length === 0 && 
+         filters.category === 'all' && 
+         filters.reason === 'all' && 
+         !filters.search && 
+         !filters.startDate && 
+         !filters.endDate && (
+          <div className="mobile-actions">
+            <button 
+              className="mobile-action income-action"
+              onClick={() => navigateToAddTransaction('income')}
+            >
+              + Add Income
+            </button>
+            <button 
+              className="mobile-action expense-action"
+              onClick={() => navigateToAddTransaction('expense')}
+            >
+              + Add Expense
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

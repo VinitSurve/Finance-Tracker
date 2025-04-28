@@ -1,106 +1,88 @@
 import { supabase } from './supabaseClient';
 
-/**
- * Fetch all custom reasons by type
- * @param {string} reasonType - The type of reason
- */
-export const getReasonsByType = async (reasonType) => {
+// Get custom reasons - adjusted to work with the actual database schema
+export const getCustomReasonsByType = async (reasonType) => {
   try {
+    // We need to use reason_type, not type
     const { data, error } = await supabase
-      .from('categories')
+      .from('custom_reasons')
       .select('*')
+      .eq('reason_type', reasonType)
       .order('created_at', { ascending: false });
-    
+      
     if (error) throw error;
+    
     return data || [];
   } catch (error) {
-    console.error(`Error fetching ${reasonType} reasons:`, error);
+    console.error(`Error fetching reasons:`, error);
     return [];
   }
 };
 
-/**
- * Fetch custom reasons for a specific category and type
- * @param {string} reasonType - The type of reason
- * @param {string} categoryId - The UUID of the category
- */
-export const getReasonsByCategoryAndType = async (reasonType, categoryId) => {
+// Function to get reasons by type and category - for more specific filtering
+export const getCustomReasonsByTypeAndCategory = async (reasonType, category) => {
   try {
+    // We need to use reason_type, not type
     const { data, error } = await supabase
-      .from('categories')
+      .from('custom_reasons')
       .select('*')
-      .eq('id', categoryId)
+      .eq('reason_type', reasonType)
       .order('created_at', { ascending: false });
     
     if (error) throw error;
+    
+    // Filter by category if provided
+    if (category && category !== 'all') {
+      return (data || []).filter(reason => 
+        !reason.category || reason.category === category
+      );
+    }
+    
     return data || [];
   } catch (error) {
-    console.error(`Error fetching ${reasonType} reasons for category:`, error);
+    console.error(`Error fetching reasons:`, error);
     return [];
   }
 };
 
-/**
- * Add a new custom reason
- * @param {Object} reason - The reason object to add
- */
-export const addCustomReason = async (reason) => {
+// Add a custom reason - fixed to use reason_type instead of type
+export const addCustomReason = async (reasonData) => {
   try {
+    // Use reason_type instead of type
+    const dataToInsert = {
+      reason_text: reasonData.reason_text,
+      reason_type: reasonData.type || 'income', // Default to income if type is not provided
+      category: reasonData.category || null,
+      created_at: new Date().toISOString()
+    };
+    
     const { data, error } = await supabase
-      .from('categories')
-      .insert([{ 
-        category_name: reason.reason_text
-      }])
+      .from('custom_reasons')
+      .insert([dataToInsert])
       .select();
-    
+      
     if (error) throw error;
-    return data?.[0];
+    
+    return data[0];
   } catch (error) {
     console.error('Error adding custom reason:', error);
     throw error;
   }
 };
 
-/**
- * Update an existing custom reason
- * @param {string} id - The UUID of the reason
- * @param {Object} updates - The fields to update
- */
-export const updateCustomReason = async (id, updates) => {
-  try {
-    const { data, error } = await supabase
-      .from('categories')
-      .update({ category_name: updates.reason_text })
-      .eq('id', id)
-      .select();
-    
-    if (error) throw error;
-    return data?.[0];
-  } catch (error) {
-    console.error('Error updating custom reason:', error);
-    throw error;
-  }
-};
-
-/**
- * Delete a custom reason
- * @param {string} id - The UUID of the reason to delete
- */
-export const deleteCustomReason = async (id) => {
+// Delete a custom reason
+export const deleteCustomReason = async (reasonId) => {
   try {
     const { error } = await supabase
-      .from('categories')
+      .from('custom_reasons')
       .delete()
-      .eq('id', id);
-    
+      .eq('id', reasonId);
+      
     if (error) throw error;
+    
     return true;
   } catch (error) {
     console.error('Error deleting custom reason:', error);
     throw error;
   }
 };
-
-// Add aliases for the existing functions to maintain compatibility
-export const getCustomReasonsByType = getReasonsByType;
-export const getCustomReasonsByTypeAndCategory = getReasonsByCategoryAndType;
