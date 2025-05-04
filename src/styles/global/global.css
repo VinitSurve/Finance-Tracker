@@ -1,463 +1,358 @@
-@import './reset.css';
-@import './colors.css';
-@import './typography.css';
+/* Import reset and typography */
+@import "./reset.css";
+@import "./typography.css";
 
-/* Global styles - Luxury Finance Theme */
-* {
-  box-sizing: border-box;
+/* Global Styles for Finance Tracker App */
+:root {
+  /* Theme transitions */
+  --transition-default: all 0.3s ease;
+
+  /* Spacing System */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-xxl: 3rem;
+  
+  /* Border Radius */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-xxl: 1.5rem;
+  --radius-full: 9999px;
+  
+  /* Font family */
+  --font-family-base: 'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  
+  /* Colors - Light Theme */
+  --color-background: #f8fafc;
+  --color-cardBg: #ffffff;
+  --color-secondaryBg: #f1f5f9;
+  --color-primary: #6366f1;
+  --color-accent: #4f46e5;
+  --color-accent-hover: #4338ca;
+  --color-success: #10b981;
+  --color-success-hover: #059669;
+  --color-warning: #f59e0b;
+  --color-warning-hover: #d97706;
+  --color-error: #ef4444;
+  --color-error-hover: #dc2626;
+  --color-textPrimary: #1e293b;
+  --color-textSecondary: #64748b;
+  --color-border: #e2e8f0;
+  --color-hover: rgba(0, 0, 0, 0.04);
+  --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  
+  /* Accent colors */
+  --accent-purple: #8b5cf6;
+  --accent-pink: #ec4899;
+  --accent-blue: #3b82f6;
+  --accent-green: #10b981;
+  --accent-yellow: #f59e0b;
+  --accent-red: #ef4444;
+}
+
+/* Dark theme overrides */
+.dark-mode {
+  --color-background: #0f172a;
+  --color-cardBg: #1e293b;
+  --color-secondaryBg: #172033;
+  --color-primary: #8b5cf6;
+  --color-accent: #7c3aed;
+  --color-accent-hover: #6d28d9;
+  --color-success: #10b981;
+  --color-success-hover: #059669;
+  --color-warning: #f59e0b;
+  --color-warning-hover: #d97706;
+  --color-error: #ef4444;
+  --color-error-hover: #dc2626;
+  --color-textPrimary: #f1f5f9;
+  --color-textSecondary: #94a3b8;
+  --color-border: #334155;
+  --color-hover: rgba(255, 255, 255, 0.04);
+  --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* Body Base Styles */
+body {
+  min-height: 100vh;
   margin: 0;
   padding: 0;
-  outline: none;
-  -webkit-tap-highlight-color: transparent;
-}
-
-/* Enhanced responsive base styling */
-html {
-  font-size: 100%;
-  -webkit-text-size-adjust: 100%;
-  box-sizing: border-box;
-  overflow-x: hidden;
-  height: 100%;
-  position: relative;
-}
-
-html, body {
-  height: 100%;
-  font-family: 'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-  width: 100%;
-  max-width: 100vw;
-  overflow-x: hidden;
-  box-sizing: border-box;
-}
-
-body {
   background-color: var(--color-background);
   color: var(--color-textPrimary);
-  transition: background-color 0.3s ease, color 0.3s ease;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  min-height: 100vh;
-  width: 100%;
+  transition: var(--transition-default);
   overflow-x: hidden;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-  font-size: clamp(14px, 1vw, 16px);
-  line-height: 1.5;
+  font-family: var(--font-family-base);
 }
 
-/* Universal container with reasonable max-width */
+/* Layout Containers */
 .container {
   width: 100%;
   max-width: 1200px;
-  padding: 0 clamp(1rem, 3vw, 2rem);
   margin: 0 auto;
+  padding: 0 var(--spacing-md);
 }
 
-/* Luxury container styles */
-.luxury-container {
-  padding: 2rem;
-  max-width: 1200px;
-  margin: 0 auto;
+.container-sm {
+  max-width: 640px;
 }
 
-/* Luxury card */
-.luxury-card {
-  background: var(--color-cardBg);
-  border-radius: 1rem;
-  padding: 1.5rem;
-  box-shadow: var(--card-shadow);
-  border: 1px solid var(--color-border);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+.container-md {
+  max-width: 768px;
 }
 
-.luxury-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+.container-lg {
+  max-width: 1024px;
 }
 
-.dark-mode .luxury-card:hover {
-  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+.container-xl {
+  max-width: 1280px;
 }
 
-/* Improved card layout */
-.card {
-  border-radius: clamp(0.8rem, 2vw, 1.2rem);
-  padding: clamp(1rem, 3vw, 1.5rem);
-  width: 100%;
-  word-wrap: break-word;
-}
-
-/* Button styles */
-.button {
-  padding: 0.75rem 1.5rem;
-  font-size: 1rem;
-  font-weight: 600;
-  border-radius: 0.8rem;
-  cursor: pointer;
-  border: none;
-  transition: all 0.3s ease;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.button-primary {
-  background-color: var(--color-primary);
-  color: white;
-}
-
-.dark-mode .button-primary {
-  background-color: var(--color-primary);
-  color: var(--color-background);
-}
-
-.button-accent {
-  background-color: var(--color-accent);
-  color: white;
-}
-
-.button-success {
-  background-color: var(--color-success);
-  color: white;
-}
-
-.button-error {
-  background-color: var(--color-error);
-  color: white;
-}
-
-.button-outline {
-  background: transparent;
-  border: 1px solid var(--color-border);
-  color: var(--color-textPrimary);
-}
-
-.button:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-}
-
-.dark-mode .button:hover {
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-}
-
-/* Ensure buttons have proper touch targets */
-button {
-  padding: clamp(0.6rem, 2vw, 0.8rem) clamp(1rem, 3vw, 1.5rem);
-  cursor: pointer;
-  min-height: 44px; /* Minimum touch target */
-}
-
-/* Input styles */
-input, select, textarea {
-  font-family: inherit;
-  font-size: 1rem;
-  padding: 0.75rem 1rem;
-  border-radius: 0.8rem;
-  border: 1px solid var(--color-border);
-  background-color: var(--color-secondaryBg);
-  color: var(--color-textPrimary);
-  transition: all 0.3s ease;
-  width: 100%;
-  max-width: 100%;
-  box-sizing: border-box;
-}
-
-input:focus, select:focus, textarea:focus {
-  outline: none;
-  border-color: var(--color-accent);
-  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
-}
-
-/* Improved form elements for touch */
-input, 
-select, 
-textarea, 
-button {
-  font-family: inherit;
-  font-size: clamp(0.9rem, 2vw, 1rem);
-  border-radius: 0.8rem;
-  max-width: 100%;
-  box-sizing: border-box;
-}
-
-/* Fix input zoom on iOS */
-@supports (-webkit-touch-callout: none) {
-  input, select, textarea {
-    font-size: 16px;
-  }
-}
-
-/* Offline indicator */
-.offline-indicator {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  background-color: var(--color-error);
-  color: white;
-  text-align: center;
-  padding: 0.5rem;
-  z-index: 1000;
-  font-weight: 500;
-  font-size: 0.9rem;
-}
-
-/* Loading spinner */
-.loading-spinner {
-  width: 50px;
-  height: 50px;
-  border: 5px solid rgba(0, 0, 0, 0.1);
-  border-radius: 50%;
-  border-top-color: var(--color-accent);
-  animation: spin 1s ease-in-out infinite;
-  margin: 2rem auto;
-}
-
-.dark-mode .loading-spinner {
-  border-color: rgba(255, 255, 255, 0.1);
-  border-top-color: var(--color-accent);
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-/* Scrollbar styling */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.05);
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--color-accent);
-  border-radius: 4px;
-}
-
-.dark-mode ::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.dark-mode ::-webkit-scrollbar-thumb {
-  background: var(--color-accent);
-}
-
-/* Responsive typography */
-h1 {
-  font-size: clamp(1.8rem, 5vw, 2.5rem);
-  line-height: 1.2;
-  overflow-wrap: break-word;
-  word-wrap: break-word;
-  hyphens: auto;
-}
-
-h2 {
-  font-size: clamp(1.5rem, 4vw, 2rem);
-  line-height: 1.2;
-  overflow-wrap: break-word;
-  word-wrap: break-word;
-  hyphens: auto;
-}
-
-h3 {
-  font-size: clamp(1.2rem, 3vw, 1.5rem);
-  line-height: 1.3;
-  overflow-wrap: break-word;
-  word-wrap: break-word;
-  hyphens: auto;
-}
-
-p {
-  font-size: clamp(0.9rem, 2vw, 1rem);
-  overflow-wrap: break-word;
-  word-wrap: break-word;
-  hyphens: auto;
-}
-
-/* Improved grid systems */
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
-  gap: clamp(1rem, 3vw, 1.5rem);
-  width: 100%;
-}
-
-/* Responsive flex layouts */
-.flex-row {
+/* Flex and Grid Helpers */
+.flex {
   display: flex;
-  flex-wrap: wrap;
-  gap: clamp(0.5rem, 2vw, 1rem);
-  width: 100%;
 }
 
 .flex-col {
-  display: flex;
   flex-direction: column;
-  gap: clamp(0.5rem, 2vw, 1rem);
+}
+
+.flex-wrap {
+  flex-wrap: wrap;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.justify-center {
+  justify-content: center;
+}
+
+.justify-between {
+  justify-content: space-between;
+}
+
+.gap-xs {
+  gap: var(--spacing-xs);
+}
+
+.gap-sm {
+  gap: var(--spacing-sm);
+}
+
+.gap-md {
+  gap: var(--spacing-md);
+}
+
+.gap-lg {
+  gap: var(--spacing-lg);
+}
+
+/* Card Styles */
+.card {
+  background-color: var(--color-cardBg);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  box-shadow: var(--card-shadow);
+  transition: var(--transition-default);
+  border: 1px solid var(--color-border);
+}
+
+.card:hover {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+}
+
+/* Form Elements */
+.input, .select, .textarea {
   width: 100%;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background-color: var(--color-secondaryBg);
+  color: var(--color-textPrimary);
+  transition: var(--transition-default);
 }
 
-/* Better image handling */
-img {
-  max-width: 100%;
-  height: auto;
-}
-
-svg, video {
-  max-width: 100%;
-  height: auto;
-}
-
-/* Focus states for accessibility */
-:focus {
-  outline: 3px solid var(--color-accent);
-  outline-offset: 2px;
-}
-
-:focus:not(:focus-visible) {
+.input:focus, .select:focus, .textarea:focus {
   outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
 }
 
-/* Safe area insets for notched devices */
-@supports (padding: max(0px)) {
-  body {
-    padding-left: min(1rem, env(safe-area-inset-left));
-    padding-right: min(1rem, env(safe-area-inset-right));
-    padding-bottom: min(1rem, env(safe-area-inset-bottom));
+/* Button Styles */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius-md);
+  font-weight: 500;
+  transition: var(--transition-default);
+  cursor: pointer;
+  border: none;
+}
+
+.btn-primary {
+  background-color: var(--color-primary);
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: var(--color-accent-hover);
+  transform: translateY(-2px);
+}
+
+.btn-secondary {
+  background-color: var(--color-secondaryBg);
+  color: var(--color-textPrimary);
+  border: 1px solid var(--color-border);
+}
+
+.btn-secondary:hover {
+  background-color: var(--color-hover);
+  transform: translateY(-2px);
+}
+
+.btn-danger {
+  background-color: var(--color-error);
+  color: white;
+}
+
+.btn-danger:hover {
+  background-color: var(--color-error-hover);
+  transform: translateY(-2px);
+}
+
+/* Animation Utilities */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease forwards;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.5s ease forwards;
+}
+
+.animate-pulse {
+  animation: pulse 2s infinite;
+}
+
+/* Accessibility */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Surface theme-aware styles */
+.surface {
+  background-color: var(--color-cardBg);
+  color: var(--color-textPrimary);
+}
+
+.surface-alt {
+  background-color: var(--color-secondaryBg);
+}
+
+/* Custom scrollbar for webkit browsers */
+::-webkit-scrollbar {
+  width: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-secondaryBg);
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 20px;
+  border: 3px solid var(--color-secondaryBg);
+}
+
+.dark-mode ::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Responsive Breakpoints */
+@media (max-width: 640px) {
+  .hide-sm {
+    display: none !important;
   }
-
-  .floating-add-button, 
-  .bottom-nav {
-    padding-left: max(0.5rem, env(safe-area-inset-left));
-    padding-right: max(0.5rem, env(safe-area-inset-right));
-    padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
-  }
 }
 
-/* Responsive navigation adjustments */
-.bottom-nav {
-  padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
-}
-
-/* Typography improvements for different devices */
 @media (max-width: 768px) {
-  body {
-    line-height: 1.6;
+  .hide-md {
+    display: none !important;
   }
   
-  /* Improve readability on smaller screens */
-  p, li {
-    font-size: 1rem;
+  .card {
+    padding: var(--spacing-md);
   }
 }
 
-@media (max-width: 480px) {
-  /* Increase touch targets on very small screens */
-  button, 
-  .btn,
-  input[type="submit"] {
-    min-height: 48px;
+@media (max-width: 1024px) {
+  .hide-lg {
+    display: none !important;
   }
-  
-  /* Better form inputs for small screens */
-  input, select, textarea {
-    padding: 0.75rem;
-  }
-  
-  /* Fix modal sizing on small screens */
-  .modal-content {
-    width: 95%;
-    max-height: 80vh;
+}
+
+/* Safe area insets for modern devices */
+@supports (padding: max(0px)) {
+  .safe-area-padding {
+    padding-left: max(var(--spacing-md), env(safe-area-inset-left));
+    padding-right: max(var(--spacing-md), env(safe-area-inset-right));
+    padding-bottom: max(var(--spacing-md), env(safe-area-inset-bottom));
   }
 }
 
 /* Print styles */
 @media print {
-  .no-print {
-    display: none !important;
-  }
-  
   body {
     background: white !important;
     color: black !important;
   }
   
-  .container {
-    width: 100% !important;
-    max-width: none !important;
-    padding: 0 !important;
-    margin: 0 !important;
+  .no-print {
+    display: none !important;
+  }
+  
+  .card {
+    box-shadow: none !important;
+    border: 1px solid #ddd !important;
   }
 }
 
-/* Fix responsive layout issues */
-html, body, #root {
-  width: 100%;
-  max-width: 100vw;
-  overflow-x: hidden;
-  box-sizing: border-box;
-}
-
-/* Ensure all containers are responsive */
-.container, 
-.page-container, 
-.content-container,
-.card,
-.form-container,
-section,
-.row,
-.col {
-  width: 100%;
-  max-width: 100%;
-  box-sizing: border-box;
-}
-
-/* Fix all div boxes to be properly responsive */
-div {
-  max-width: 100%;
-  box-sizing: border-box;
-}
-
-/* Ensure images don't break layout */
-img, svg, video {
-  max-width: 100%;
-  height: auto;
-}
-
-/* Fix potential text overflow issues */
-h1, h2, h3, h4, h5, h6, p, span, a {
-  overflow-wrap: break-word;
-  word-wrap: break-word;
-  hyphens: auto;
-}
-
-/* Responsive tables */
-table {
-  width: 100%;
-  display: block;
-  overflow-x: auto;
-}
-
-/* Responsive form elements */
-input, 
-select, 
-textarea, 
-button {
-  max-width: 100%;
-  box-sizing: border-box;
-}
-
-/* Touch-friendly size for all interactive elements */
-button, 
-a, 
-.clickable, 
-input[type="button"], 
-input[type="submit"], 
-input[type="reset"] {
-  min-height: 44px;
-  min-width: 44px;
-  padding: clamp(0.5rem, 2vw, 1rem);
+/* High Contrast Mode Fixes */
+@media (prefers-contrast: more) {
+  :root {
+    --card-shadow: 0 0 0 1px black !important;
+  }
+  
+  .btn, .input, .select, .textarea {
+    border: 2px solid currentColor !important;
+  }
 }

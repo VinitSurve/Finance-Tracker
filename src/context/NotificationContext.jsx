@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import '../styles/global/global.css';
 import toast from 'react-hot-toast';
 
 const NotificationContext = createContext();

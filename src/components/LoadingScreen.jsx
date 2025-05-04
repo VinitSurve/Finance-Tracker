@@ -1,4 +1,6 @@
+import React from 'react';
 import { useTheme } from '../context/ThemeContext';
+import '../styles/global/global.css';
 import '../styles/components/LoadingScreen.css';
 
 const LoadingScreen = () => {

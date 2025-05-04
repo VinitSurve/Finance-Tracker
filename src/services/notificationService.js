@@ -1,3 +1,4 @@
+import '../styles/global/global.css';
 import { supabase, getCurrentUser } from './supabaseClient';
 
 // Save push subscription to Supabase

@@ -1,14 +1,19 @@
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import '../styles/global/global.css';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '../context/ThemeContext';
 import { useCurrency } from '../context/CurrencyContext';
 import toast from 'react-hot-toast';
 import '../styles/pages/SetupBalances.css';
 import { supabase } from '../services/supabaseClient';
+import { useNavigate } from 'react-router-dom';
+import TransferMoney from '../components/TransferMoney';
 
 const SetupBalances = () => {
   const { darkMode } = useTheme();
   const { formatAmount } = useCurrency();
+  const navigate = useNavigate();
+  
   const [balances, setBalances] = useState([]);
   const [newBalance, setNewBalance] = useState({
     name: '',
@@ -22,17 +27,14 @@ const SetupBalances = () => {
   const [error, setError] = useState(null);
   const [totalBalance, setTotalBalance] = useState(0);
   const [balanceTypes, setBalanceTypes] = useState([]);
+  const [activeTab, setActiveTab] = useState('accounts');
 
-  const handleIconSelect = (icon) => {
-    setNewBalance(prev => ({
-      ...prev,
-      icon: icon
-    }));
-    
-    if (error && error.includes('icon')) {
-      setError('');
-    }
-  };
+  // Available icons for selection
+  const availableIcons = ['💰', '💵', '💳', '🏦', '🏠', '🚗', '💻', '📱', '🛒', '🎮', '✈️', '🏛️', '👛'];
+
+  useEffect(() => {
+    fetchBalancesAndTypes();
+  }, []);
 
   const fetchBalancesAndTypes = async () => {
     try {
@@ -60,7 +62,7 @@ const SetupBalances = () => {
         name: item.balance_type?.name || 'Account',
         icon: item.balance_type?.icon || '💰',
         balance: parseFloat(item.amount || 0),
-        balance_type_id: item.balance_type_id
+        balance_type_id: item.balance_type?.id
       }));
       
       setBalances(formattedBalances);
@@ -86,16 +88,23 @@ const SetupBalances = () => {
     }
   };
 
-  useEffect(() => {
-    fetchBalancesAndTypes();
-  }, []);
-
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setNewBalance(prev => ({
       ...prev,
       [name]: name === 'balance' ? value.replace(/[^0-9.]/g, '') : value
     }));
+  };
+
+  const handleIconSelect = (icon) => {
+    setNewBalance(prev => ({
+      ...prev,
+      icon: icon
+    }));
+    
+    if (error && error.includes('icon')) {
+      setError('');
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -120,58 +129,47 @@ const SetupBalances = () => {
       setIsLoading(true);
       setError(null);
       
-      console.log('Checking database tables before adding balance...');
-      const { data: tableInfo } = await supabase.from('user_balances').select('count(*)');
-      console.log('User balances count:', tableInfo);
-      
-      const balanceData = {
-        name: newBalance.name.trim(),
-        icon: newBalance.icon,
-        balance: parseFloat(newBalance.balance),
-        color: newBalance.color
-      };
-      
-      console.log('Adding balance with data:', balanceData);
-      
       if (isEditing && editId) {
+        // Find balance type ID based on name
         const { data: balanceTypeData } = await supabase
           .from('balance_types')
           .select('id')
-          .eq('name', balanceData.name)
+          .eq('name', newBalance.name)
           .single();
         
         if (!balanceTypeData) {
           throw new Error('Balance type not found');
         }
         
+        // Update existing balance
         const { error: updateError } = await supabase
           .from('user_balances')
           .update({
             balance_type_id: balanceTypeData.id,
-            amount: balanceData.balance
+            amount: newBalance.balance
           })
           .eq('id', editId);
         
         if (updateError) throw updateError;
         toast.success('Balance updated successfully!');
       } else {
+        // Create new balance
         let balanceTypeId;
-        const { data: existingType, error: typeCheckError } = await supabase
+        
+        // Check if balance type already exists
+        const { data: existingType } = await supabase
           .from('balance_types')
           .select('id')
-          .eq('name', balanceData.name)
+          .eq('name', newBalance.name)
           .maybeSingle();
-        
-        if (typeCheckError) {
-          console.log('Error checking balance type:', typeCheckError);
-        }
-        
+          
         if (!existingType) {
+          // Create new balance type
           const { data: newTypeData, error: createTypeError } = await supabase
             .from('balance_types')
             .insert([{
-              name: balanceData.name,
-              icon: balanceData.icon || '💰',
+              name: newBalance.name,
+              icon: newBalance.icon || '💰',
               is_default: false
             }])
             .select('id')
@@ -183,11 +181,12 @@ const SetupBalances = () => {
           balanceTypeId = existingType.id;
         }
         
+        // Insert new balance with balance type ID
         const { error: insertError } = await supabase
           .from('user_balances')
           .insert([{
             balance_type_id: balanceTypeId,
-            amount: balanceData.balance
+            amount: newBalance.balance
           }]);
         
         if (insertError) throw insertError;
@@ -196,6 +195,7 @@ const SetupBalances = () => {
       
       await fetchBalancesAndTypes();
       
+      // Reset form
       setNewBalance({
         name: '',
         icon: '💰',
@@ -215,8 +215,6 @@ const SetupBalances = () => {
 
   const handleEdit = async (id) => {
     try {
-      setIsLoading(true);
-      
       const balanceToEdit = balances.find(balance => balance.id === id);
       
       if (balanceToEdit) {
@@ -228,14 +226,13 @@ const SetupBalances = () => {
         });
         setIsEditing(true);
         setEditId(id);
+        setActiveTab('add');
       } else {
         toast.error("Balance not found");
       }
     } catch (err) {
       console.error("Error preparing edit:", err);
-      toast.error("Failed to load balance data. Please try again.");
-    } finally {
-      setIsLoading(false);
+      toast.error("Failed to load balance data");
     }
   };
 
@@ -256,29 +253,41 @@ const SetupBalances = () => {
         toast.success("Balance deleted successfully!");
       } catch (err) {
         console.error("Error deleting balance:", err);
-        toast.error("Failed to delete balance. Please try again.");
+        toast.error("Failed to delete balance");
       } finally {
         setIsLoading(false);
       }
     }
   };
 
-  const handleCancel = () => {
-    setNewBalance({
-      name: '',
-      icon: '💰',
-      balance: '',
-      color: '#6366f1'
-    });
-    setIsEditing(false);
-    setEditId(null);
+  // Handle transfer completion - refresh balances
+  const handleTransferComplete = async () => {
+    await fetchBalancesAndTypes();
+    toast.success("Balances updated successfully!");
+  };
+
+  // Animation variants
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: { 
+      opacity: 1,
+      transition: { 
+        duration: 0.5,
+        staggerChildren: 0.1
+      }
+    }
+  };
+  
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.5 } }
   };
 
   return (
-    <div className={`balances-container ${darkMode ? 'dark' : 'light'}-mode`}>
-      <section className="balances-header">
+    <div className={`setup-page ${darkMode ? 'dark' : 'light'}-mode`}>
+      <div className="balances-container">
         <motion.div
-          className="header-content"
+          className="balances-header"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
@@ -286,150 +295,292 @@ const SetupBalances = () => {
           <h1>Manage Your Balances</h1>
           <p>Add and manage different types of accounts and balances</p>
         </motion.div>
-      </section>
-
-      {error && (
-        <div className="error-message">
-          <p>⚠️ {error}</p>
-          <button onClick={() => setError(null)}>Dismiss</button>
-        </div>
-      )}
-
-      <div className="balances-grid">
-        <section className="add-balance-form responsive-card">
-          <h2>{isEditing ? 'Update Balance' : 'Add New Balance'}</h2>
-          <form onSubmit={handleSubmit} className="responsive-form">
-            <div className="form-group">
-              <label htmlFor="name">Account Name</label>
-              <input
-                type="text"
-                id="name"
-                name="name"
-                value={newBalance.name}
-                onChange={handleInputChange}
-                placeholder="e.g., Savings Account"
-                disabled={isLoading}
-                className="responsive-input"
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="icon">Choose an Icon</label>
-              <div className="icon-selector responsive-grid">
-                {['💰', '💵', '💳', '🏦', '🏠', '🚗', '💻', '📱', '🛒', '🎮', '✈️', '🏛️', '👛'].map(icon => (
-                  <button
-                    key={icon}
-                    type="button"
-                    className={`icon-button ${newBalance.icon === icon ? 'selected' : ''}`}
-                    onClick={() => handleIconSelect(icon)}
-                  >
-                    {icon}
-                  </button>
-                ))}
+        
+        <div className="balances-content">
+          <div className="balances-sidebar">
+            {/* Total Balance Container */}
+            <div className="balances-profile-container">
+              <div className="balances-total-icon">
+                <div className="total-balance-icon">💰</div>
+                <h3 className="total-balance-value">{formatAmount(totalBalance)}</h3>
+                <p className="total-balance-label">Total Balance</p>
               </div>
             </div>
-
-            <div className="form-group">
-              <label htmlFor="balance">Current Balance</label>
-              <input
-                type="text"
-                id="balance"
-                name="balance"
-                value={newBalance.balance}
-                onChange={handleInputChange}
-                placeholder="0.00"
-                disabled={isLoading}
-                className="responsive-input"
-              />
-            </div>
-
-            <div className="form-actions responsive-actions">
-              {isEditing && (
-                <button 
-                  type="button" 
-                  className="cancel-button responsive-button" 
-                  onClick={handleCancel}
-                  disabled={isLoading}
-                >
-                  Cancel
-                </button>
-              )}
+            
+            {/* Navigation Tabs */}
+            <nav className="balances-nav">
               <button 
-                type="submit" 
-                className="submit-button responsive-button"
-                disabled={isLoading}
+                className={`nav-tab ${activeTab === 'accounts' ? 'active' : ''}`}
+                onClick={() => setActiveTab('accounts')}
               >
-                {isLoading ? 'Processing...' : isEditing ? 'Update Balance' : 'Add Balance'}
+                <span className="tab-icon">🏦</span>
+                <span className="tab-label">My Accounts</span>
               </button>
-            </div>
-          </form>
-        </section>
-
-        <section className="balances-list responsive-card">
-          <div className="balances-header-row">
-            <h2>Your Balances</h2>
-            <div className="total-balance">
-              <span>Total: {formatAmount(totalBalance)}</span>
+              <button 
+                className={`nav-tab ${activeTab === 'add' ? 'active' : ''}`}
+                onClick={() => {
+                  setActiveTab('add');
+                  setIsEditing(false);
+                  setEditId(null);
+                  setNewBalance({
+                    name: '',
+                    icon: '💰',
+                    balance: '',
+                    color: '#6366f1'
+                  });
+                }}
+              >
+                <span className="tab-icon">➕</span>
+                <span className="tab-label">Add Account</span>
+              </button>
+            </nav>
+            
+            {/* Quick Actions Panel */}
+            <div className="quick-actions-panel">
+              <h3>Quick Actions</h3>
+              <div className="quick-actions-buttons">
+                <button className="quick-action income" onClick={() => navigate('/add-income')}>
+                  <span className="action-icon">💸</span>
+                  <span className="action-text">Add Income</span>
+                </button>
+                <button className="quick-action expense" onClick={() => navigate('/add-expense')}>
+                  <span className="action-icon">💳</span>
+                  <span className="action-text">Add Expense</span>
+                </button>
+              </div>
             </div>
           </div>
+          
+          <div className="balances-main">
+            {/* Transfer Money Component - New Addition */}
+            {balances.length >= 2 && (
+              <TransferMoney 
+                accounts={balances.map(balance => ({
+                  id: balance.id,
+                  amount: balance.balance,
+                  balance_type: {
+                    name: balance.name,
+                    icon: balance.icon
+                  }
+                }))} 
+                onTransferComplete={handleTransferComplete} 
+              />
+            )}
 
-          {isLoading ? (
-            <div className="loading">Processing your request...</div>
-          ) : balances.length === 0 ? (
-            <div className="empty-state">
-              <p>You haven't added any balances yet.</p>
-              <p>Start by adding your first account above!</p>
-            </div>
-          ) : (
-            <div className="balances-grid-list responsive-list">
-              {balances.map(account => (
-                <motion.div
-                  key={account.id}
-                  className="balance-card responsive-balance-card"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3 }}
+            <AnimatePresence mode="wait">
+              {/* Add Account Panel */}
+              {activeTab === 'add' && (
+                <motion.div 
+                  key="add-panel"
+                  className="add-balance-form"
+                  initial="hidden"
+                  animate="visible"
+                  exit="hidden"
+                  variants={containerVariants}
                 >
-                  <div className="balance-card-content">
-                    <div 
-                      className="balance-icon responsive-icon" 
-                      style={{ backgroundColor: `${account.color || '#6366f1'}20`, color: account.color || '#6366f1' }}
-                    >
-                      {account.icon}
+                  <h2>{isEditing ? 'Update Balance' : 'Add New Balance'}</h2>
+                  
+                  {error && (
+                    <div className="alert alert-error">
+                      <p>{error}</p>
                     </div>
-                    <div className="balance-details">
-                      <h3>{account.name}</h3>
-                      <p className="balance-amount">{formatAmount(account.balance)}</p>
-                      {account.updatedAt && (
-                        <p className="balance-date">
-                          Last updated: {new Date(account.updatedAt).toLocaleDateString()}
-                        </p>
+                  )}
+                  
+                  <form className="balances-form" onSubmit={handleSubmit}>
+                    <div className="form-group">
+                      <label htmlFor="name">Account Name</label>
+                      <input
+                        type="text"
+                        id="name"
+                        name="name"
+                        value={newBalance.name}
+                        onChange={handleInputChange}
+                        placeholder="e.g., Savings Account"
+                        className="form-input"
+                        disabled={isLoading}
+                      />
+                    </div>
+                    
+                    <div className="form-group">
+                      <label htmlFor="icon">Choose an Icon</label>
+                      <div className="icon-selector">
+                        {availableIcons.map((icon) => (
+                          <button
+                            key={icon}
+                            type="button"
+                            className={`icon-button ${newBalance.icon === icon ? 'selected' : ''}`}
+                            onClick={() => handleIconSelect(icon)}
+                            disabled={isLoading}
+                            aria-label={`Select ${icon} icon`}
+                          >
+                            {icon}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    <div className="form-group">
+                      <label htmlFor="balance">Current Balance</label>
+                      <input
+                        type="text"
+                        id="balance"
+                        name="balance"
+                        value={newBalance.balance}
+                        onChange={handleInputChange}
+                        placeholder="0.00"
+                        className="form-input"
+                        disabled={isLoading}
+                      />
+                    </div>
+                    
+                    <div className="form-actions">
+                      {isEditing && (
+                        <button 
+                          type="button" 
+                          className="form-button cancel-button" 
+                          onClick={() => {
+                            setIsEditing(false);
+                            setEditId(null);
+                            setNewBalance({
+                              name: '',
+                              icon: '💰',
+                              balance: '',
+                              color: '#6366f1'
+                            });
+                          }}
+                          disabled={isLoading}
+                        >
+                          Cancel
+                        </button>
                       )}
+                      
+                      <button 
+                        type="submit" 
+                        className="form-button submit-button"
+                        disabled={isLoading}
+                      >
+                        {isLoading ? 'Processing...' : isEditing ? 'Update Balance' : 'Add Balance'}
+                      </button>
+                    </div>
+                  </form>
+                </motion.div>
+              )}
+              
+              {/* Accounts Panel */}
+              {activeTab === 'accounts' && (
+                <motion.div 
+                  key="accounts-panel"
+                  className="balances-list"
+                  initial="hidden"
+                  animate="visible"
+                  exit="hidden"
+                  variants={containerVariants}
+                >
+                  <div className="balances-header-row">
+                    <h2>Your Balances</h2>
+                    <div className="total-balance">
+                      <span>Total: {formatAmount(totalBalance)}</span>
                     </div>
                   </div>
-                  <div className="balance-actions responsive-balance-actions">
-                    <button 
-                      onClick={() => handleEdit(account.id)} 
-                      aria-label={`Edit ${account.name}`}
-                      disabled={isLoading}
-                      className="responsive-action-button"
-                    >
-                      ✏️
-                    </button>
-                    <button 
-                      onClick={() => handleDelete(account.id)} 
-                      aria-label={`Delete ${account.name}`}
-                      disabled={isLoading}
-                      className="responsive-action-button"
-                    >
-                      🗑️
-                    </button>
-                  </div>
+                  
+                  {isLoading ? (
+                    <div className="loading">Processing your request...</div>
+                  ) : balances.length === 0 ? (
+                    <div className="empty-state">
+                      <p>You haven't added any balances yet.</p>
+                      <p>Start by adding your first account!</p>
+                    </div>
+                  ) : (
+                    <div className="balances-grid-list">
+                      {balances.map(account => (
+                        <motion.div
+                          key={account.id}
+                          className="balance-card"
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.3 }}
+                          variants={itemVariants}
+                        >
+                          <div className="balance-card-content">
+                            <div className="balance-icon">
+                              {account.icon}
+                            </div>
+                            <div className="balance-details">
+                              <h3>{account.name}</h3>
+                              <p className="balance-amount">{formatAmount(account.balance)}</p>
+                            </div>
+                          </div>
+                          <div className="balance-actions">
+                            <button 
+                              onClick={() => handleEdit(account.id)} 
+                              className="action-button edit-button"
+                              aria-label={`Edit ${account.name}`}
+                              disabled={isLoading}
+                            >
+                              ✏️
+                            </button>
+                            <button 
+                              onClick={() => handleDelete(account.id)} 
+                              className="action-button delete-button"
+                              aria-label={`Delete ${account.name}`}
+                              disabled={isLoading}
+                            >
+                              🗑️
+                            </button>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
+                  )}
                 </motion.div>
-              ))}
-            </div>
-          )}
-        </section>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
+        
+        {/* Mobile Bottom Navbar */}
+        <div className="bottom-navbar">
+          <div className="bottom-navbar-tabs">
+            <button 
+              className={`bottom-navbar-tab ${activeTab === 'accounts' ? 'active' : ''}`}
+              onClick={() => setActiveTab('accounts')}
+            >
+              <div className="tab-content">
+                <span className="bottom-navbar-icon">🏦</span>
+                <span className="bottom-navbar-label">Accounts</span>
+              </div>
+            </button>
+            <button 
+              className={`bottom-navbar-tab ${activeTab === 'add' ? 'active' : ''}`}
+              onClick={() => {
+                setActiveTab('add');
+                setIsEditing(false);
+                setEditId(null);
+                setNewBalance({
+                  name: '',
+                  icon: '💰',
+                  balance: '',
+                  color: '#6366f1'
+                });
+              }}
+            >
+              <div className="tab-content">
+                <span className="bottom-navbar-icon">➕</span>
+                <span className="bottom-navbar-label">Add</span>
+              </div>
+            </button>
+          </div>
+          
+          {/* Page title indicator */}
+          <div className="bottom-navbar-title">
+            <span className="current-page-icon">
+              {activeTab === 'accounts' ? '🏦' : '➕'}
+            </span>
+            <span className="current-page-name">
+              {activeTab === 'accounts' ? 'Accounts' : isEditing ? 'Edit Account' : 'Add Account'}
+            </span>
+          </div>
+        </div>
       </div>
     </div>
   );

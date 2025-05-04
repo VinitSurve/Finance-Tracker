@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import '../styles/global/global.css';
 import { motion } from 'framer-motion';
 import { useTheme } from '../context/ThemeContext';
 import '../styles/pages/NotFound.css';

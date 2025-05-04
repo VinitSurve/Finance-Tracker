@@ -739,7 +739,7 @@
   bottom: clamp(1.5rem, 5vw, 2rem);
   right: clamp(1.5rem, 5vw, 2rem);
   z-index: 100;
-  display: none;
+  display: none; /* Always keep it hidden */
 }
 
 .mobile-add-btn {
@@ -757,11 +757,6 @@
   box-shadow: 0 8px 20px rgba(99, 102, 241, 0.6);
   transition: all 0.3s ease;
   -webkit-tap-highlight-color: transparent;
-}
-
-.mobile-add-btn:hover {
-  transform: scale(1.05) rotate(5deg);
-  box-shadow: 0 10px 25px rgba(99, 102, 241, 0.8);
 }
 
 /* Responsive Design */
@@ -809,8 +804,7 @@
   }
   
   .mobile-fab {
-    display: block;
-    bottom: clamp(5rem, 10vh, 6rem);
+    display: none; /* Ensure it stays hidden on mobile */
   }
   
   .mobile-add-btn {

@@ -10,6 +10,8 @@ import { getAllBalances } from '../services/balanceService';
 import { runSystemDiagnostic } from '../services/diagnosticService';
 import toast from 'react-hot-toast';
 import '../styles/pages/Dashboard.css';
+import React from 'react';
+import '../styles/global/global.css';
 
 const Dashboard = () => {
   const { darkMode } = useTheme();

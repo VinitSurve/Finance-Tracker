@@ -1,3 +1,5 @@
+import '../styles/global/global.css';
+import React from 'react';
 import { useState } from 'react';
 import '../styles/pages/TransactionForm.css';
 

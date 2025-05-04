@@ -1,8 +1,10 @@
+import React from 'react';
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '../context/ThemeContext';
 import { generateFinanceNotification } from '../services/ai/askFinanceAI';
 import toast from 'react-hot-toast';
+import '../styles/global/global.css';
 import '../styles/components/Notifications.css';
 
 const Notifications = () => {

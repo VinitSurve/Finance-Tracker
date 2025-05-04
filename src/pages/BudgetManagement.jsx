@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import '../styles/global/global.css';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '../context/ThemeContext';
 import { useCurrency } from '../context/CurrencyContext';

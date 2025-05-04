@@ -47,6 +47,8 @@
   color: var(--dark-text);
 }
 
+
+
 /* Sidebar */
 .sidebar {
   grid-row: 1 / span 2;
@@ -61,6 +63,7 @@
   z-index: 30;
   transition: all 0.3s ease;
   overflow-y: auto;
+  text-transform:;
 }
 
 .light-mode .sidebar {
@@ -411,6 +414,17 @@
   grid-row: 2;
   padding: 2rem;
   overflow-y: auto;
+  position: relative; /* Add this */
+  height: 100vh; /* Set fixed height */
+  overflow-x: hidden; /* Prevent horizontal overflow */
+  scrollbar-gutter: stable; /* Prevent layout shift from scrollbars */
+}
+
+/* Page transition container */
+.main-content > div {
+  width: 100%;
+  min-height: calc(100% - 4rem); /* Account for padding */
+  position: relative;
 }
 
 /* Mobile navigation */
@@ -560,6 +574,7 @@
   .main-content {
     grid-column: 1;
     padding-bottom: 5rem;
+    height: calc(100vh - 60px); /* Account for mobile header */
   }
 
   .mobile-nav {

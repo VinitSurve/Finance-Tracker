@@ -1,4 +1,6 @@
+import React from 'react';
 import { useState } from 'react';
+import '../../styles/global/global.css';
 import '../../styles/components/AIAssistant.css';
 
 const AIAssistant = () => {

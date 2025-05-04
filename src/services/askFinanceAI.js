@@ -1,3 +1,4 @@
+import '../styles/global/global.css';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 // Get API key from environment variable

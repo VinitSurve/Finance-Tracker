@@ -1,6 +1,6 @@
-import { useState, useRef, useEffect } from 'react';
-import { Link, NavLink, useLocation } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useEffect, useRef, useState } from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
+import '../styles/global/global.css'; // Import global CSS
 import '../styles/components/FloatingNav.css';
 
 const FloatingNav = () => {
@@ -8,6 +8,7 @@ const FloatingNav = () => {
   const location = useLocation();
   const navItemsRef = useRef(null);
   const activeItemRef = useRef(null);
+  const navRef = useRef(null);
   
   const navItems = [
     { path: '/dashboard', icon: '📊', label: 'Dashboard' },
@@ -19,24 +20,38 @@ const FloatingNav = () => {
     { path: '/settings', icon: '⚙️', label: 'Settings' }
   ];
   
+  // Handle click outside to close the nav
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (isExpanded && navRef.current && !navRef.current.contains(event.target)) {
+        setIsExpanded(false);
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [isExpanded]);
+  
   // Scroll to the active item when the navbar expands
   useEffect(() => {
     if (isExpanded && navItemsRef.current && activeItemRef.current) {
-      const container = navItemsRef.current;
-      const activeItem = activeItemRef.current;
-      
-      const containerRect = container.getBoundingClientRect();
-      const activeRect = activeItem.getBoundingClientRect();
-      
-      // Calculate the scroll position to center the active item
-      const scrollPosition = activeRect.left - containerRect.left - 
-        (containerRect.width / 2) + (activeRect.width / 2);
-      
-      // Scroll smoothly to the position
-      container.scrollTo({
-        left: scrollPosition,
-        behavior: 'smooth'
-      });
+      setTimeout(() => {
+        const container = navItemsRef.current;
+        const activeItem = activeItemRef.current;
+        
+        if (!container || !activeItem) return;
+        
+        // Scroll the active item into view with a smooth animation
+        activeItem.scrollIntoView({
+          behavior: 'smooth',
+          block: 'nearest'
+        });
+      }, 300);
     }
   }, [isExpanded]);
   
@@ -44,13 +59,65 @@ const FloatingNav = () => {
     setIsExpanded(!isExpanded);
   };
   
+  // Handle navigation click - scroll to top when navigating to a new page
+  const handleNavClick = () => {
+    // Close the navigation
+    setIsExpanded(false);
+    
+    // Get the current scroll position
+    const currentScrollPosition = window.pageYOffset;
+    
+    // If already at top, no need to animate
+    if (currentScrollPosition <= 0) return;
+    
+    // Determine if the browser supports smooth scrolling
+    const supportsNativeSmoothScroll = 'scrollBehavior' in document.documentElement.style;
+    
+    if (supportsNativeSmoothScroll) {
+      // Use enhanced smooth scroll with custom timing
+      const scrollToTop = () => {
+        const scrollOptions = {
+          top: 0,
+          left: 0,
+          behavior: 'smooth'
+        };
+        window.scrollTo(scrollOptions);
+      };
+      
+      scrollToTop();
+    } else {
+      // Use custom smooth scrolling for browsers that don't support it
+      const duration = Math.min(1200, Math.max(800, currentScrollPosition / 2));
+      
+      // Use easeInOutCubic for natural motion
+      const easeInOutCubic = (t) => 
+        t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+      
+      const startTime = performance.now();
+      
+      const animateScroll = (currentTime) => {
+        const elapsedTime = currentTime - startTime;
+        const progress = Math.min(elapsedTime / duration, 1);
+        
+        const easedProgress = easeInOutCubic(progress);
+        const newScrollPosition = currentScrollPosition * (1 - easedProgress);
+        
+        window.scrollTo(0, newScrollPosition);
+        
+        if (progress < 1) {
+          requestAnimationFrame(animateScroll);
+        }
+      };
+      
+      requestAnimationFrame(animateScroll);
+    }
+  };
+  
   return (
     <div className="floating-nav-container">
-      <motion.div 
+      <div 
+        ref={navRef}
         className={`floating-nav ${isExpanded ? 'expanded' : ''}`}
-        initial={{ scale: 0.8, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ duration: 0.3 }}
       >
         <button 
           className="nav-toggle"
@@ -60,32 +127,24 @@ const FloatingNav = () => {
           {isExpanded ? '✕' : '≡'}
         </button>
         
-        <AnimatePresence>
-          {isExpanded && (
-            <motion.div 
-              className="nav-items"
-              ref={navItemsRef}
-              initial={{ opacity: 0, width: 0 }}
-              animate={{ opacity: 1, width: 'auto' }}
-              exit={{ opacity: 0, width: 0 }}
-              transition={{ duration: 0.3 }}
+        <div 
+          className={`nav-items ${isExpanded ? 'visible' : ''}`}
+          ref={navItemsRef}
+        >
+          {navItems.map((item) => (
+            <NavLink
+              key={item.path}
+              to={item.path}
+              className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+              onClick={handleNavClick}
+              ref={location.pathname === item.path ? activeItemRef : null}
             >
-              {navItems.map((item) => (
-                <NavLink
-                  key={item.path}
-                  to={item.path}
-                  className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
-                  onClick={() => setIsExpanded(false)}
-                  ref={location.pathname === item.path ? activeItemRef : null}
-                >
-                  <span className="nav-icon">{item.icon}</span>
-                  <span className="nav-label">{item.label}</span>
-                </NavLink>
-              ))}
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </motion.div>
+              <span className="nav-icon">{item.icon}</span>
+              <span className="nav-label">{item.label}</span>
+            </NavLink>
+          ))}
+        </div>
+      </div>
     </div>
   );
 };

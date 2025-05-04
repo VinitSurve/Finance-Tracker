@@ -1,3 +1,4 @@
+import '../../styles/global/global.css';
 import { askFinanceAI } from './askFinanceAI';
 
 // A simple test function to check if the API connection works

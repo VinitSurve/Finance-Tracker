@@ -1,3 +1,4 @@
+import '../styles/global/global.css';
 import { createClient } from '@supabase/supabase-js';
 
 // Get environment variables for Supabase connection

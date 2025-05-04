@@ -1,345 +1,423 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { useTheme } from '../context/ThemeContext';
 import { useCurrency } from '../context/CurrencyContext';
-import { usePointsSystem } from '../hooks/usePointsSystem';
+import { useTheme } from '../context/ThemeContext';
 import { supabase } from '../services/supabaseClient';
 import toast from 'react-hot-toast';
 import Modal from '../components/Modal';
 import CustomReasonManager from '../components/CustomReasonManager';
 import '../styles/pages/AddIncome.css';
+import '../styles/global/global.css';
+
+// Simple icon components
+const BackArrowIcon = () => <span className="text-lg">←</span>;
+const CalendarIcon = () => <span className="text-lg">📅</span>;
+const NotesIcon = () => <span className="text-lg">📝</span>;
 
 const AddIncome = () => {
-  const { darkMode } = useTheme();
-  const { formatAmount, currencySymbol } = useCurrency();
-  const { addPoints } = usePointsSystem();
   const navigate = useNavigate();
-  
-  const [formData, setFormData] = useState({
-    amount: '',
-    date: new Date().toISOString().split('T')[0],
-    category: '',
-    description: '',
-    accountId: '',
-    customReason: ''
-  });
-  
-  const [aiTips, setAiTips] = useState([]);
+  const { darkMode } = useTheme();
+  const { formatAmount, currencySymbol } = useCurrency?.() || { formatAmount: (val) => `₹${val}`, currencySymbol: '₹' };
+
+  // Form state
+  const [accounts, setAccounts] = useState([]);
+  const [amount, setAmount] = useState('');
+  const [description, setDescription] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [selectedAccount, setSelectedAccount] = useState(null);
+  const [date, setDate] = useState(new Date());
+  const [customReason, setCustomReason] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [animateAmount, setAnimateAmount] = useState(false);
-  const [accounts, setAccounts] = useState([]);
-  const [isLoadingAccounts, setIsLoadingAccounts] = useState(true);
-  const [customReasons, setCustomReasons] = useState([]);
+  const [formErrors, setFormErrors] = useState({});
+  const [formSubmitAttempted, setFormSubmitAttempted] = useState(false);
+
+  // Modal state for custom reason manager
   const [isCustomReasonModalOpen, setIsCustomReasonModalOpen] = useState(false);
+
+  // Income statistics with real data from database
   const [incomeStats, setIncomeStats] = useState({
     monthlyTotal: 0,
     averageIncome: 0,
-    recentIncome: 0,
-    incomeCount: 0
+    topIncomeSource: 'None',
+    lastIncome: 'No recent income'
   });
-  const [formSubmitAttempted, setFormSubmitAttempted] = useState(false);
-  
-  const categories = ['Salary', 'Gift', 'Cashback', 'Freelance', 'Investment Return', 'Others'];
 
-  // Load accounts data
+  // AI tips for income
+  const [aiTips, setAiTips] = useState([
+    "Allocate at least 20% of your income directly to savings 💰",
+    "Consider multiple income streams for financial security 📊",
+    "Invest a portion of unexpected income for long-term growth 📈",
+    "Track all income sources to identify growth opportunities ✅",
+    "Review your income strategy quarterly for optimization 🔍"
+  ]);
+
+  const categories = [
+    { id: 'salary', name: 'Salary', icon: '💼', color: '#4CAF50' },
+    { id: 'investment', name: 'Investment', icon: '📈', color: '#2196F3' },
+    { id: 'gift', name: 'Gift', icon: '🎁', color: '#E91E63' },
+    { id: 'freelance', name: 'Freelance', icon: '💻', color: '#9C27B0' },
+    { id: 'refund', name: 'Refund', icon: '💸', color: '#FF9800' },
+    { id: 'other', name: 'Other', icon: '🔄', color: '#607D8B' }
+  ];
+
+  // Custom reasons for income
+  const [customReasons, setCustomReasons] = useState([]);
+
+  // Add loading state for accounts
+  const [accountsLoading, setAccountsLoading] = useState(true);
+
+  // Hard-coded user ID since this is a single-user application
+  const userId = '1'; // Replace with your actual user ID from your database
+
+  // Fetch accounts from database
   useEffect(() => {
-    const loadAccounts = async () => {
+    const fetchAccounts = async () => {
+      setAccountsLoading(true);
+
       try {
-        setIsLoadingAccounts(true);
-        
+        console.log("Fetching accounts for single user...");
+
+        // Modified query - only using columns that exist in the database
         const { data, error } = await supabase
           .from('user_balances')
           .select(`
             id,
             amount,
             balance_type_id,
-            balance_type:balance_type_id (
-              id,
-              name,
-              icon
-            )
+            balance_types:balance_type_id (id, name, icon)
           `);
-        
+
         if (error) {
+          console.error("Error fetching accounts:", error);
           throw error;
         }
-        
-        const formattedAccounts = data.map(item => ({
-          id: item.id,
-          balance_type_id: item.balance_type_id,
-          name: item.balance_type?.name || 'Account',
-          icon: item.balance_type?.icon || '💰',
-          balance: parseFloat(item.amount || 0)
-        }));
-        
-        setAccounts(formattedAccounts);
-        
-        if (formattedAccounts.length > 0) {
-          setFormData(prev => ({ ...prev, accountId: formattedAccounts[0].id }));
+
+        console.log("Raw account data:", data);
+
+        if (data && Array.isArray(data) && data.length > 0) {
+          // Transform data for UI with available columns
+          const formattedAccounts = data.map(account => ({
+            id: account.id,
+            name: account.balance_types?.name || 'Unnamed Account',
+            balance: parseFloat(account.amount) || 0,
+            icon: account.balance_types?.icon || '💰',
+            balance_type_id: account.balance_type_id
+          }));
+
+          console.log('Formatted accounts:', formattedAccounts);
+          setAccounts(formattedAccounts);
+
+          // Select first account by default
+          if (formattedAccounts.length > 0 && !selectedAccount) {
+            setSelectedAccount(formattedAccounts[0].id);
+          }
+        } else {
+          console.log("No accounts found");
         }
       } catch (error) {
         console.error('Failed to load accounts:', error);
-        toast.error('Failed to load your accounts');
+        toast.error(`Failed to load accounts: ${error.message}`);
       } finally {
-        setIsLoadingAccounts(false);
+        setAccountsLoading(false);
       }
     };
-    
-    loadAccounts();
+
+    fetchAccounts();
     loadIncomeStats();
-    generateAiTips();
-  }, []);
-
-  // Load custom reasons with correct field name (reason_type instead of type)
-  useEffect(() => {
-    const loadCustomReasons = async () => {
-      try {
-        console.log("Fetching custom income reasons...");
-        // Use reason_type instead of type
-        const { data, error } = await supabase
-          .from('custom_reasons')
-          .select('*')
-          .eq('reason_type', 'income') // Using reason_type instead of type
-          .order('created_at', { ascending: false });
-        
-        if (error) throw error;
-        
-        console.log("Received income reasons from DB:", data);
-        
-        if (data && Array.isArray(data)) {
-          setCustomReasons(data);
-        } else {
-          console.warn("No income reasons found or invalid data structure");
-          setCustomReasons([]);
-        }
-      } catch (error) {
-        console.error('Error loading income reasons:', error);
-        setCustomReasons([]);
-      }
-    };
-
     loadCustomReasons();
-  }, []);
+  }, []); // No dependencies needed since we're not checking for authentication
 
-  // Load income statistics
   const loadIncomeStats = async () => {
     try {
-      // Get current month's data
-      const currentDate = new Date();
-      const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).toISOString();
-      const lastDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).toISOString();
-      
-      // Fetch monthly income total
+      const now = new Date();
+      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+      const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString();
+
+      // Using created_at instead of date
       const { data: monthlyData, error: monthlyError } = await supabase
         .from('transactions')
-        .select('amount')
+        .select('amount, category, created_at')
         .eq('type', 'income')
         .gte('created_at', firstDayOfMonth)
         .lte('created_at', lastDayOfMonth);
-      
+
       if (monthlyError) throw monthlyError;
-      
-      // Calculate monthly total
-      const monthlyTotal = monthlyData.reduce((sum, transaction) => sum + parseFloat(transaction.amount || 0), 0);
-      
-      // Fetch all income transactions for average calculation
+
+      const monthlyTotal = monthlyData.reduce((sum, income) =>
+        sum + parseFloat(income.amount || 0), 0);
+
       const { data: allIncomeData, error: allIncomeError } = await supabase
         .from('transactions')
-        .select('amount, created_at')
+        .select('amount, category, created_at')
         .eq('type', 'income')
         .order('created_at', { ascending: false });
-      
+
       if (allIncomeError) throw allIncomeError;
-      
-      // Calculate average income
-      const totalIncome = allIncomeData.reduce((sum, transaction) => sum + parseFloat(transaction.amount || 0), 0);
-      const averageIncome = allIncomeData.length > 0 ? totalIncome / allIncomeData.length : 0;
-      
-      // Get most recent income amount
-      const recentIncome = allIncomeData.length > 0 ? parseFloat(allIncomeData[0].amount || 0) : 0;
-      
+
+      const averageIncome = allIncomeData.length > 0
+        ? allIncomeData.reduce((sum, income) => sum + parseFloat(income.amount || 0), 0) / allIncomeData.length
+        : 0;
+
+      const categoryCount = {};
+      let topCategory = 'None';
+      let maxCount = 0;
+
+      allIncomeData.forEach(income => {
+        const category = income.category || 'Other';
+        categoryCount[category] = (categoryCount[category] || 0) + 1;
+
+        if (categoryCount[category] > maxCount) {
+          maxCount = categoryCount[category];
+          topCategory = category;
+        }
+      });
+
+      let lastIncome = 'No recent income';
+      if (allIncomeData.length > 0) {
+        const latestIncomeDate = new Date(allIncomeData[0].created_at);
+        const diffTime = Math.abs(now - latestIncomeDate);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        if (diffDays === 0) {
+          lastIncome = 'Today';
+        } else if (diffDays === 1) {
+          lastIncome = 'Yesterday';
+        } else {
+          lastIncome = `${diffDays} days ago`;
+        }
+      }
+
       setIncomeStats({
         monthlyTotal,
         averageIncome,
-        recentIncome,
-        incomeCount: allIncomeData.length
+        topIncomeSource: topCategory,
+        lastIncome
       });
-      
+
     } catch (error) {
       console.error('Error loading income statistics:', error);
     }
   };
 
-  // Generate AI tips based on data
-  const generateAiTips = () => {
-    const tips = [
-      "Consider saving 20% of your income for future goals! 🚀",
-      "Track your income sources to identify your most profitable activities.",
-      "Set up automatic transfers to savings when you receive income.",
-      "Remember: paying yourself first is key to building wealth. 💰",
-      "Compare your income month-over-month to track your financial growth."
-    ];
-    setAiTips(tips);
+  const loadCustomReasons = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('custom_reasons')
+        .select('*')
+        .eq('reason_type', 'income')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      if (data && Array.isArray(data)) {
+        setCustomReasons(data);
+      }
+    } catch (error) {
+      console.error('Error loading income reasons:', error);
+    }
   };
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    if (name === 'amount') {
-      const regex = /^[0-9]*\.?[0-9]*$/;
-      if (value === '' || regex.test(value)) {
-        setFormData({ ...formData, [name]: value });
-        setAnimateAmount(true);
-        setTimeout(() => setAnimateAmount(false), 300);
-      }
-    } else {
-      setFormData({ ...formData, [name]: value });
+  const getCategoryTips = () => {
+    switch (selectedCategory) {
+      case 'salary':
+        return "Consider setting up automatic transfers on payday to your savings account.";
+      case 'investment':
+        return "Reinvesting dividends can significantly boost your investment growth over time.";
+      case 'gift':
+        return "Consider investing at least half of unexpected financial gifts for long-term benefit.";
+      case 'freelance':
+        return "Set aside 25-30% of freelance income for taxes to avoid surprises at tax time.";
+      case 'refund':
+        return "Treat refunds as savings rather than extra spending money to improve financial health.";
+      default:
+        return "Track all income sources regularly to understand your complete financial picture.";
     }
   };
-  
+
+  const handleAccountSelect = (accountId) => {
+    setSelectedAccount(accountId);
+    if (formErrors.account) {
+      setFormErrors({ ...formErrors, account: null });
+    }
+  };
+
+  const handleCategorySelect = (categoryId) => {
+    setSelectedCategory(categoryId);
+    if (formErrors.category) {
+      setFormErrors({ ...formErrors, category: null });
+    }
+
+    setCustomReason('');
+  };
+
+  const handleAmountChange = (e) => {
+    const value = e.target.value;
+    const regex = /^[0-9]*\.?[0-9]*$/;
+
+    if (value === '' || regex.test(value)) {
+      setAmount(value);
+      setAnimateAmount(true);
+      setTimeout(() => setAnimateAmount(false), 300);
+
+      if (formErrors.amount) {
+        setFormErrors({ ...formErrors, amount: null });
+      }
+    }
+  };
+
+  const handleReasonChange = (e) => {
+    setCustomReason(e.target.value);
+    if (formErrors.reason) {
+      setFormErrors({ ...formErrors, reason: null });
+    }
+  };
+
+  const handleAddCustomReason = () => {
+    setIsCustomReasonModalOpen(true);
+  };
+
+  const handleReasonAdded = (newReason) => {
+    setCustomReasons([newReason, ...customReasons]);
+    setCustomReason(newReason.reason_text);
+
+    if (formErrors.reason) {
+      setFormErrors({ ...formErrors, reason: null });
+    }
+
+    new Audio('/sounds/click.mp3').play().catch(e => console.log('Sound play failed:', e));
+    toast.success(`New reason "${newReason.reason_text}" added successfully!`);
+  };
+
+  const validateForm = () => {
+    const errors = {};
+
+    if (!amount || parseFloat(amount) <= 0) {
+      errors.amount = 'Please enter a valid amount';
+    }
+
+    if (!selectedCategory) {
+      errors.category = 'Please select a category';
+    }
+
+    if (!customReason) {
+      errors.reason = 'Please select or add a reason';
+    }
+
+    if (!selectedAccount) {
+      errors.account = 'Please select an account';
+    }
+
+    return errors;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     setFormSubmitAttempted(true);
-    
-    if (!formData.amount) {
-      toast.error("Please enter an amount");
+
+    const errors = validateForm();
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      toast.error("Please fill in all required fields");
       return;
     }
-    
-    if (!formData.category) {
-      toast.error("Please select a category");
-      return;
-    }
-    
-    if (!formData.accountId) {
-      toast.error("Please select an account");
-      return;
-    }
-    
-    if (!formData.customReason) {
-      toast.error("Please select a reason");
-      return;
-    }
-    
+
+    setIsSubmitting(true);
+
     try {
-      setIsSubmitting(true);
-      
-      // Ensure amount is a proper number
-      const incomeAmount = parseFloat(parseFloat(formData.amount).toFixed(2));
-      
-      // Validate the amount is positive
-      if (isNaN(incomeAmount) || incomeAmount <= 0) {
-        toast.error("Please enter a valid positive amount");
-        setIsSubmitting(false);
-        return;
-      }
-      
-      // Get the selected account
-      const selectedAccount = accounts.find(acc => acc.id === formData.accountId);
-      
-      // Create the transaction record with the correct balance_type_id
-      const transactionData = {
-        amount: incomeAmount,
-        category: formData.category,
+      // Find the selected account object to get its details
+      const selectedAcct = accounts.find(acc => acc.id === selectedAccount);
+      if (!selectedAcct) throw new Error("Selected account not found");
+
+      // Get category name from the categories array
+      const categoryName = categories.find(cat => cat.id === selectedCategory)?.name || 'Other';
+
+      // Create transaction data that matches the actual table schema
+      // Note: using only created_at for timestamp
+      const incomeData = {
+        balance_type_id: selectedAcct.balance_type_id,
+        amount: parseFloat(amount),
+        category: categoryName,
         type: 'income',
-        note: formData.description || null,
-        reason: formData.customReason || null,
-        balance_type_id: selectedAccount.balance_type_id,
-        created_at: formData.date ? new Date(formData.date).toISOString() : new Date().toISOString()
+        note: description || null,
+        reason: customReason || null,
+        created_at: new Date().toISOString()
       };
-      
+
+      console.log('Submitting income data:', incomeData);
+
+      // Insert the income transaction
       const { data, error } = await supabase
         .from('transactions')
-        .insert([transactionData])
+        .insert([incomeData])
         .select();
-      
-      if (error) {
-        throw error;
-      }
-      
-      // Update the account balance
-      const newBalance = (selectedAccount.balance || 0) + incomeAmount;
-      
+
+      if (error) throw error;
+
+      // Update account balance
+      const newBalance = parseFloat(selectedAcct.balance) + parseFloat(amount);
+
       const { error: updateError } = await supabase
         .from('user_balances')
         .update({ amount: newBalance })
-        .eq('id', formData.accountId);
-      
-      if (updateError) {
-        throw updateError;
-      }
-      
-      await addPoints(2, 'Income recorded');
-      
-      new Audio('/sounds/cash-register.mp3').play().catch(e => console.log('Sound play failed:', e));
-      
-      toast.success(`Income of ${formatAmount(incomeAmount)} added successfully! ✨`);
-      
-      navigate('/dashboard');
+        .eq('id', selectedAccount);
+
+      if (updateError) throw updateError;
+
+      new Audio('/sounds/success.mp3').play().catch(e => console.log('Sound play failed:', e));
+      toast.success(`Income of ${formatAmount(amount)} added successfully!`);
+      navigate('/dashboard', { state: { message: 'Income added successfully!' } });
     } catch (error) {
       console.error('Error adding income:', error);
-      toast.error("Failed to add income. Please try again.");
+      toast.error(`Failed to add income: ${error.message}`);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleReasonAdded = (newReason) => {
-    console.log("New income reason added:", newReason);
-    // Make sure we're correctly using reason_type instead of type
-    const formattedReason = {
-      id: newReason.id || Date.now().toString(),
-      reason_text: newReason.reason_text,
-      reason_type: 'income',  // Use reason_type instead of type
-      category: newReason.category || formData.category || ''
-    };
-    
-    // Update state with the new reason
-    setCustomReasons(prevReasons => {
-      const updated = [formattedReason, ...prevReasons];
-      console.log("Updated income reasons:", updated);
-      return updated;
+  const filteredReasons = selectedCategory
+    ? customReasons.filter(reason => !reason.category || reason.category === selectedCategory)
+    : customReasons;
+
+  const formatDate = (date) => {
+    return new Date(date).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
     });
-    
-    // Set the selected reason
-    setFormData(prev => ({
-      ...prev,
-      customReason: formattedReason.reason_text
-    }));
   };
 
   return (
     <div className={`add-income-page ${darkMode ? 'dark' : 'light'}-mode`}>
       <div className="add-income-container">
-        <motion.div 
+        <motion.div
           className="add-income-header"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
           <h1>Add Income</h1>
-          <p>Record your latest earnings and grow your finances</p>
+          <p>Track your earnings to build your financial future</p>
         </motion.div>
-        
+
         <div className="add-income-content">
-          {/* Sidebar with Stats and Tips */}
-          <motion.div 
+          <motion.div
             className="add-income-sidebar"
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
           >
-            {/* Income Stats Panel */}
             <div className="income-stats-panel">
               <div className="income-stat-item">
-                <div className="income-stat-icon">📊</div>
+                <div className="income-stat-icon">💹</div>
                 <div className="income-stat-details">
                   <div className="income-stat-label">This Month's Income</div>
                   <div className="income-stat-value">{formatAmount(incomeStats.monthlyTotal)}</div>
                 </div>
               </div>
-              
+
               <div className="income-stat-item">
                 <div className="income-stat-icon">📈</div>
                 <div className="income-stat-details">
@@ -347,40 +425,51 @@ const AddIncome = () => {
                   <div className="income-stat-value">{formatAmount(incomeStats.averageIncome)}</div>
                 </div>
               </div>
-              
+
               <div className="income-stat-item">
-                <div className="income-stat-icon">🔄</div>
+                <div className="income-stat-icon">🔝</div>
                 <div className="income-stat-details">
-                  <div className="income-stat-label">Latest Income</div>
-                  <div className="income-stat-value">{formatAmount(incomeStats.recentIncome)}</div>
+                  <div className="income-stat-label">Top Income Source</div>
+                  <div className="income-stat-value">{incomeStats.topIncomeSource}</div>
                 </div>
               </div>
-              
+
               <div className="income-stat-item">
-                <div className="income-stat-icon">🧮</div>
+                <div className="income-stat-icon">⏱️</div>
                 <div className="income-stat-details">
-                  <div className="income-stat-label">Total Entries</div>
-                  <div className="income-stat-value">{incomeStats.incomeCount}</div>
+                  <div className="income-stat-label">Last Income Received</div>
+                  <div className="income-stat-value">{incomeStats.lastIncome}</div>
                 </div>
               </div>
             </div>
-            
-            {/* AI Tips Panel */}
+
             <div className="ai-tips-panel">
               <div className="ai-tips-header">
                 <div className="ai-tips-icon">💡</div>
-                <div className="ai-tips-title">Smart Tips</div>
+                <div className="ai-tips-title">Smart Earning Tips</div>
               </div>
-              
+
               {aiTips.map((tip, index) => (
                 <div className="ai-tip-item" key={index}>
                   <div className="ai-tip-text">{tip}</div>
                 </div>
               ))}
+
+              {selectedCategory && (
+                <motion.div
+                  className="ai-tip-item"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <div className="ai-tip-text">
+                    <strong>{categories.find(c => c.id === selectedCategory)?.name} tip:</strong> {getCategoryTips()}
+                  </div>
+                </motion.div>
+              )}
             </div>
           </motion.div>
-          
-          {/* Main Form Content */}
+
           <motion.div
             className="add-income-main"
             initial={{ opacity: 0, y: 20 }}
@@ -388,10 +477,9 @@ const AddIncome = () => {
             transition={{ duration: 0.5, delay: 0.3 }}
           >
             <form className="add-income-form-panel" onSubmit={handleSubmit}>
-              {/* Income Amount Section */}
               <div className="form-section">
                 <h3>Income Details</h3>
-                
+
                 <div className="form-group amount-group">
                   <label htmlFor="amount">Amount</label>
                   <div className="amount-input">
@@ -401,10 +489,11 @@ const AddIncome = () => {
                       type="text"
                       id="amount"
                       name="amount"
-                      value={formData.amount}
-                      onChange={handleInputChange}
+                      value={amount}
+                      onChange={handleAmountChange}
                       placeholder="0.00"
                       disabled={isSubmitting}
+                      className={formSubmitAttempted && formErrors.amount ? "error-border" : ""}
                     />
                     {animateAmount && (
                       <motion.span
@@ -417,160 +506,218 @@ const AddIncome = () => {
                       </motion.span>
                     )}
                   </div>
+                  {formSubmitAttempted && formErrors.amount && (
+                    <div className="field-error-message">{formErrors.amount}</div>
+                  )}
                 </div>
-                
+
                 <div className="form-group">
-                  <label htmlFor="category">Source Category</label>
-                  <select
-                    id="category"
-                    name="category"
-                    value={formData.category}
-                    onChange={handleInputChange}
-                    disabled={isSubmitting}
-                  >
-                    <option value="">Select category</option>
-                    {categories.map(category => (
-                      <option key={category} value={category}>{category}</option>
+                  <label>Income Category</label>
+                  <div className={`category-grid ${formSubmitAttempted && formErrors.category ? "error-container" : ""}`}>
+                    {categories.map((category) => (
+                      <motion.div
+                        key={category.id}
+                        whileHover={{ y: -4, boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => handleCategorySelect(category.id)}
+                        className={`category-item ${selectedCategory === category.id ? 'selected' : ''}`}
+                        style={{
+                          borderColor: selectedCategory === category.id ? category.color :
+                            formSubmitAttempted && formErrors.category ? 'var(--color-error)' : 'var(--color-border)',
+                          backgroundColor: selectedCategory === category.id ? `${category.color}10` : 'var(--color-secondaryBg)'
+                        }}
+                      >
+                        <div
+                          className="category-icon"
+                          style={{ backgroundColor: `${category.color}20` }}
+                        >
+                          <span>{category.icon}</span>
+                        </div>
+                        <div className="category-name">{category.name}</div>
+                        {selectedCategory === category.id && <div className="category-check" style={{ backgroundColor: category.color }}>✓</div>}
+                      </motion.div>
                     ))}
-                  </select>
+                  </div>
+                  {formSubmitAttempted && formErrors.category && (
+                    <div className="field-error-message">{formErrors.category}</div>
+                  )}
                 </div>
-                
+
                 <div className="form-group custom-reason-group">
                   <div className="reason-label-container">
                     <label htmlFor="customReason">Reason</label>
-                    <button
+                    <motion.button
                       type="button"
                       className="add-custom-reason-btn"
-                      onClick={() => setIsCustomReasonModalOpen(true)}
+                      onClick={handleAddCustomReason}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      disabled={!selectedCategory}
                     >
                       + Add Custom Reason
-                    </button>
+                    </motion.button>
                   </div>
-                  <select
-                    id="customReason"
-                    name="customReason"
-                    value={formData.customReason}
-                    onChange={handleInputChange}
-                    disabled={isSubmitting}
-                    className={formSubmitAttempted && !formData.customReason ? "error-border" : ""}
-                    required
-                  >
-                    <option value="">Select a reason</option>
-                    
-                    {/* Explicitly map all custom reasons without any filters */}
-                    {customReasons && customReasons.map(reason => (
-                      <option 
-                        key={`reason-${reason.id}-${reason.reason_text}`}
-                        value={reason.reason_text}
-                      >
-                        {reason.reason_text}
-                      </option>
-                    ))}
-                  </select>
-                  
-                  {formSubmitAttempted && !formData.customReason && (
-                    <div style={{ color: 'red', fontSize: '0.8rem', marginTop: '0.3rem' }}>
-                      Please select a reason or add a custom one
-                    </div>
+                  <div className="reason-select-container">
+                    <select
+                      id="customReason"
+                      name="customReason"
+                      value={customReason}
+                      onChange={handleReasonChange}
+                      disabled={isSubmitting || !selectedCategory}
+                      className={`reason-select ${formSubmitAttempted && formErrors.reason ? "error-border" : ""}`}
+                    >
+                      <option value="">Select a reason</option>
+                      {filteredReasons.map((reason) => (
+                        <option key={reason.id} value={reason.reason_text}>
+                          {reason.reason_text}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  {formSubmitAttempted && formErrors.reason && (
+                    <div className="field-error-message">{formErrors.reason}</div>
+                  )}
+                  {selectedCategory && filteredReasons.length === 0 && (
+                    <motion.div
+                      className="no-reasons-message"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.2 }}
+                    >
+                      <span className="no-reasons-icon">📝</span>
+                      <span>No reasons found for this category. Add a custom reason.</span>
+                    </motion.div>
                   )}
                 </div>
               </div>
-              
-              {/* Account and Date Section */}
+
               <div className="form-section">
-                <h3>Account Information</h3>
-                
+                <h3>Payment Details</h3>
+
                 <div className="form-group">
-                  <label htmlFor="accountId">Select Account</label>
-                  {isLoadingAccounts ? (
-                    <div className="loading-accounts">Loading accounts...</div>
-                  ) : accounts.length === 0 ? (
+                  <label>Select Account</label>
+                  {accountsLoading ? (
+                    <div className="accounts-loading">
+                      <p>Loading your accounts...</p>
+                      <div className="spinner"></div>
+                    </div>
+                  ) : accounts && accounts.length > 0 ? (
+                    <div className={`accounts-grid ${formSubmitAttempted && formErrors.account ? "error-container" : ""}`}>
+                      {accounts.map((account) => (
+                        <motion.div
+                          key={account.id}
+                          whileHover={{ y: -4, boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}
+                          whileTap={{ scale: 0.95 }}
+                          onClick={() => handleAccountSelect(account.id)}
+                          className={`account-card ${selectedAccount === account.id ? 'selected' : ''}`}
+                          style={{
+                            borderColor: selectedAccount === account.id ? 'var(--color-success)' :
+                              formSubmitAttempted && formErrors.account ? 'var(--color-error)' : 'var(--color-border)'
+                          }}
+                        >
+                          <div className="account-icon">{account.icon || '💰'}</div>
+                          <div className="account-details">
+                            <div className="account-name">{account.name}</div>
+                            <div className="account-balance">{formatAmount(account.balance)}</div>
+                          </div>
+                          {selectedAccount === account.id && (
+                            <motion.div
+                              className="account-check"
+                              initial={{ scale: 0 }}
+                              animate={{ scale: 1 }}
+                              transition={{ type: "spring", stiffness: 500, damping: 15 }}
+                            >
+                              ✓
+                            </motion.div>
+                          )}
+                        </motion.div>
+                      ))}
+                    </div>
+                  ) : (
                     <div className="no-accounts-message">
                       <p>No accounts found. Please add an account first.</p>
-                      <button 
+                      <button
                         type="button"
                         className="add-account-btn"
                         onClick={() => navigate('/balances')}
                       >
-                        Add Account
+                        + Add Account
                       </button>
                     </div>
-                  ) : (
-                    <select
-                      id="accountId"
-                      name="accountId"
-                      value={formData.accountId}
-                      onChange={(e) => setFormData({ ...formData, accountId: e.target.value })}
-                      disabled={isSubmitting}
-                    >
-                      <option value="">Select account</option>
-                      {accounts.map(account => (
-                        <option key={account.id} value={account.id}>
-                          {account.icon} {account.name} ({formatAmount(account.balance)})
-                        </option>
-                      ))}
-                    </select>
+                  )}
+                  {formSubmitAttempted && formErrors.account && (
+                    <div className="field-error-message">{formErrors.account}</div>
                   )}
                 </div>
-                
-                <div className="form-group">
+
+                <div className="form-group date-group">
                   <label htmlFor="date">Transaction Date</label>
-                  <input
-                    type="date"
-                    id="date"
-                    name="date"
-                    value={formData.date}
-                    onChange={handleInputChange}
-                    disabled={isSubmitting}
-                  />
+                  <div className="date-input-container">
+                    <span className="date-icon">📅</span>
+                    <input
+                      type="date"
+                      id="date"
+                      value={date instanceof Date ? date.toISOString().split('T')[0] : date}
+                      onChange={(e) => setDate(e.target.value)}
+                      className="date-input"
+                    />
+                  </div>
                 </div>
-                
+
                 <div className="form-group">
                   <label htmlFor="description">Notes (Optional)</label>
                   <textarea
                     id="description"
-                    name="description"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Add any additional notes here..."
+                    className="notes-textarea"
                     rows="3"
-                    value={formData.description}
-                    onChange={handleInputChange}
-                    placeholder="Add any additional details about this income"
-                    disabled={isSubmitting}
                   />
                 </div>
               </div>
-              
-              {/* Form Actions */}
+
               <div className="form-actions">
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   className="cancel-button"
-                  onClick={() => navigate('/dashboard')}
+                  onClick={() => navigate(-1)}
                   disabled={isSubmitting}
                 >
                   Cancel
                 </button>
-                <motion.button 
-                  type="submit" 
+                <motion.button
+                  type="submit"
                   className="submit-button"
-                  disabled={isSubmitting || accounts.length === 0}
+                  disabled={isSubmitting}
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.97 }}
                 >
-                  {isSubmitting ? 'Saving...' : 'Add Income'}
+                  {isSubmitting ? (
+                    <>
+                      <span className="button-spinner"></span>
+                      <span>Adding...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Add Income</span>
+                      <span className="submit-icon">💰</span>
+                    </>
+                  )}
                 </motion.button>
               </div>
             </form>
           </motion.div>
         </div>
       </div>
-      
-      <Modal 
+
+      <Modal
         isOpen={isCustomReasonModalOpen}
         onClose={() => setIsCustomReasonModalOpen(false)}
       >
-        <CustomReasonManager 
+        <CustomReasonManager
           reasonType="income"
-          category={formData.category || undefined}
+          category={selectedCategory}
           onClose={() => setIsCustomReasonModalOpen(false)}
           onReasonAdded={handleReasonAdded}
         />

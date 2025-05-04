@@ -1,3 +1,5 @@
+import '../styles/global/global.css';
+
 /**
  * Returns an appropriate emoji for a transaction category
  * @param {string} category The transaction category

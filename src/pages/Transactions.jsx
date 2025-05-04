@@ -1,3 +1,4 @@
+import React from 'react';
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useTheme } from '../context/ThemeContext';
@@ -5,6 +6,7 @@ import { useCurrency } from '../context/CurrencyContext';
 import { supabase } from '../services/supabaseClient';
 import toast from 'react-hot-toast';
 import '../styles/pages/Transactions.css';
+import '../styles/global/global.css';
 import { useNavigate } from 'react-router-dom';
 
 const Transactions = () => {

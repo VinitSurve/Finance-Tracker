@@ -1,8 +1,10 @@
+import React from 'react';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '../context/ThemeContext';
 import { saveSubscription } from '../services/notificationService';
 import toast from 'react-hot-toast';
+import '../styles/global/global.css';
 import '../styles/components/NotificationSetup.css';
 
 const NotificationSetup = () => {

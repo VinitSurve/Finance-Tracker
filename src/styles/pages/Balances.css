@@ -784,6 +784,11 @@
   font-weight: 500;
 }
 
+/* Add margin below the transfer money component */
+.transfer-money {
+  margin-bottom: 1.5rem;
+}
+
 /* Responsive design */
 @media (max-width: 1024px) {
   .balances-content {
@@ -802,6 +807,15 @@
 @media (max-width: 768px) {
   .balances-content {
     flex-direction: column;
+  }
+  
+  .balances-sidebar {
+    order: 2;
+    width: 100%;
+  }
+  
+  .balances-main {
+    order: 1;
   }
   
   .balances-sidebar {

@@ -1,4 +1,5 @@
 import React from 'react';
+import '../styles/global/global.css';
 
 /**
  * A controlled checkbox component that ensures proper React behavior

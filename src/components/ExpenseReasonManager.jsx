@@ -1,18 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { getCategories } from '../services/categoryService';
-import { 
-  getCustomReasons, 
-  createCustomReason, 
-  updateCustomReason, 
-  deleteCustomReason,
-  debugCustomReasonsTable 
-} from '../services/reasonService';
+import { getCustomReasons, createCustomReason, updateCustomReason, deleteCustomReason } from '../services/reasonService';
 import '../styles/global/global.css';
-import '../styles/components/CustomReasonManager.css';
+import '../styles/components/ExpenseReasonManager.css';
 
-const CustomReasonManager = ({ 
+const ExpenseReasonManager = ({ 
   reasonType = 'transaction', 
-  type = 'expense',
   category = '', 
   onClose, 
   onReasonAdded,
@@ -22,7 +15,6 @@ const CustomReasonManager = ({
   const [customReasons, setCustomReasons] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedType, setSelectedType] = useState(type);
   const [selectedCategory, setSelectedCategory] = useState(category || '');
   const [newReason, setNewReason] = useState('');
   const [isAdding, setIsAdding] = useState(false);
@@ -34,7 +26,6 @@ const CustomReasonManager = ({
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
-  const [debugResult, setDebugResult] = useState(null);
   const inputRef = useRef(null);
 
   useEffect(() => {
@@ -57,44 +48,16 @@ const CustomReasonManager = ({
     return () => clearTimeout(timer);
   }, [successMessage]);
 
-  // Debug on initial load
-  useEffect(() => {
-    const runDebug = async () => {
-      const result = await debugCustomReasonsTable();
-      setDebugResult(result);
-      
-      if (!result.success) {
-        console.warn('Custom reasons table debug failed:', result);
-        setErrorMessage(`Database issue: ${result.error || 'Unknown error'}`);
-      }
-    };
-    
-    runDebug();
-  }, []);
-
-  const getThemeConfig = () => {
-    if (selectedType === 'income') {
-      return {
-        themeClass: 'theme-income',
-        icon: '💰',
-        title: 'Income Reasons',
-        accentColor: '#10B981',
-        backgroundGradient: 'var(--color-cardBg)',
-        illustration: '💸 → 💰'
-      };
-    } else {
-      return {
-        themeClass: 'theme-expense',
-        icon: '💸',
-        title: 'Expense Reasons',
-        accentColor: '#EF4444',
-        backgroundGradient: 'var(--color-cardBg)',
-        illustration: '💰 → 💸'
-      };
-    }
+  // Theme configuration
+  const themeConfig = {
+    themeClass: 'theme-expense',
+    icon: '💸',
+    title: 'Expense Reasons',
+    accentColor: '#EF4444',
+    backgroundGradient: 'linear-gradient(135deg, #FEF2F2, #FEF2F2)',
+    illustration: '💰 → 💸',
+    solidBgColor: '#FEF2F2'
   };
-
-  const themeConfig = getThemeConfig();
 
   useEffect(() => {
     const loadData = async () => {
@@ -109,7 +72,7 @@ const CustomReasonManager = ({
         
         const reasonsResult = await getCustomReasons({ 
           reason_type: reasonType,
-          type: selectedType
+          type: 'expense'
         });
         
         if (!reasonsResult.success) {
@@ -126,34 +89,19 @@ const CustomReasonManager = ({
     };
     
     loadData();
-  }, [selectedType, reasonType]);
+  }, [reasonType]);
 
   const filteredReasons = customReasons
     .filter(reason => !selectedCategory || reason.category === selectedCategory)
     .filter(reason => !searchTerm || reason.reason_text.toLowerCase().includes(searchTerm.toLowerCase()));
   
   const commonReasons = {
-    expense: {
-      Food: ['Groceries', 'Restaurant', 'Fast Food', 'Coffee'],
-      Shopping: ['Clothes', 'Electronics', 'Gifts', 'Home Goods'],
-      Transportation: ['Gas', 'Car Maintenance', 'Public Transit', 'Ride Share'],
-      Bills: ['Rent', 'Utilities', 'Internet', 'Phone Bill'],
-      Health: ['Doctor Visit', 'Medicine', 'Insurance', 'Fitness']
-    },
-    income: {
-      Salary: ['Monthly Salary', 'Bonus', 'Commission', 'Overtime'],
-      Investment: ['Dividends', 'Interest', 'Capital Gains', 'Rental Income'],
-      Freelance: ['Client Payment', 'Contract Work', 'Consulting Fee', 'Project Completion'],
-      Other: ['Gift', 'Tax Refund', 'Side Hustle', 'Cash Back']
-    }
-  };
-
-  const handleTypeChange = (type) => {
-    setSelectedType(type);
-    setSelectedCategory('');
-    setNewReason('');
-    setIsAdding(false);
-    setEditingReason(null);
+    Food: ['Groceries', 'Restaurant', 'Fast Food', 'Coffee'],
+    Shopping: ['Clothes', 'Electronics', 'Gifts', 'Home Goods'],
+    Transportation: ['Gas', 'Car Maintenance', 'Public Transit', 'Ride Share'],
+    Bills: ['Rent', 'Utilities', 'Internet', 'Phone Bill'],
+    Health: ['Doctor Visit', 'Medicine', 'Insurance', 'Gym'],
+    Entertainment: ['Movies', 'Games', 'Subscription', 'Streaming'],
   };
   
   const handleAddReason = async () => {
@@ -163,30 +111,18 @@ const CustomReasonManager = ({
       setSubmitting(true);
       setErrorMessage('');
       
-      const reasonData = {
-        reason_text: newReason.trim(),
-        category: selectedCategory,
-        type: selectedType,
-        reason_type: reasonType
-      };
-      
-      console.log("Creating reason with data:", reasonData);
-      
-      let result;
       if (editingReason) {
-        // Update existing reason
-        result = await updateCustomReason(editingReason.id, reasonData);
-      } else {
-        // Create new reason
-        result = await createCustomReason(reasonData);
-      }
-      
-      if (!result || !result.success) {
-        throw new Error(result?.error?.message || 'Failed to save reason');
-      }
-      
-      // Success handling
-      if (editingReason) {
+        const result = await updateCustomReason(editingReason.id, {
+          reason_text: newReason,
+          category: selectedCategory,
+          type: 'expense',
+          reason_type: reasonType
+        });
+        
+        if (!result.success) {
+          throw new Error(result.error?.message || 'Failed to update reason');
+        }
+        
         setCustomReasons(prevReasons => 
           prevReasons.map(reason => 
             reason.id === editingReason.id 
@@ -194,15 +130,24 @@ const CustomReasonManager = ({
               : reason
           )
         );
-        setSuccessMessage('Reason updated successfully!');
       } else {
-        if (!result.data || !result.data[0]) {
-          throw new Error('No data returned from server');
+        const reasonData = {
+          reason_text: newReason,
+          category: selectedCategory,
+          type: 'expense',
+          reason_type: reasonType
+        };
+        
+        console.log("Creating expense reason with data:", reasonData);
+        
+        const result = await createCustomReason(reasonData);
+        
+        if (!result || !result.success) {
+          throw new Error(result?.error?.message || 'Failed to create expense reason');
         }
         
         setCustomReasons(prevReasons => [result.data[0], ...prevReasons]);
         
-        // Notify parent component if provided
         if (onReasonAdded) {
           onReasonAdded(result.data[0]);
         }
@@ -210,18 +155,11 @@ const CustomReasonManager = ({
         setSuccessMessage('Reason added successfully!');
       }
       
-      // Reset form
       setNewReason('');
       setEditingReason(null);
-      
-      // Refocus input for fast multiple entries
-      setTimeout(() => {
-        inputRef.current?.focus();
-      }, 10);
-      
     } catch (err) {
-      console.error('Error saving reason:', err);
-      setErrorMessage(err.message || 'Failed to save reason');
+      console.error('Error adding/updating reason:', err);
+      setErrorMessage(err.message || 'Failed to add reason');
     } finally {
       setSubmitting(false);
     }
@@ -229,17 +167,6 @@ const CustomReasonManager = ({
   
   const handleQuickReasonSelect = (reason) => {
     setNewReason(reason);
-    inputRef.current?.focus();
-  };
-  
-  const handleEditReason = (reason) => {
-    setEditingReason(reason);
-    setNewReason(reason.reason_text);
-    setActiveTab('add');
-    // Focus after tab change
-    setTimeout(() => {
-      inputRef.current?.focus();
-    }, 100);
   };
   
   const handleSelectReason = (reason) => {
@@ -260,36 +187,35 @@ const CustomReasonManager = ({
       
       setCustomReasons(prevReasons => prevReasons.filter(reason => reason.id !== id));
       setConfirmDelete(null);
-      setSuccessMessage('Reason deleted successfully!');
     } catch (err) {
       console.error('Error deleting reason:', err);
-      setErrorMessage(err.message || 'Failed to delete reason');
+      setError(err.message);
     } finally {
       setSubmitting(false);
     }
   };
-  
-  const handleCancelEdit = () => {
-    setEditingReason(null);
-    setNewReason('');
-  };
 
   return (
     <div 
-      className={`custom-reason-manager ${themeConfig.themeClass}`}
-      style={{ backgroundColor: themeConfig.backgroundGradient }}
+      className="expense-reason-manager"
+      style={{ backgroundColor: themeConfig.solidBgColor }}
     >
-      <div className="reason-manager-header">
+      <div 
+        className="reason-manager-header" 
+        style={{
+          backgroundImage: `linear-gradient(135deg, ${themeConfig.accentColor}15, ${themeConfig.accentColor}05)`
+        }}
+      >
         <div className="reason-title-container">
           <div className="reason-icon pulse-animation">
             {themeConfig.icon}
           </div>
           <div className="reason-title-content">
             <h3 className="reason-manager-title">
-              {editingReason ? 'Edit Reason' : themeConfig.title}
+              {themeConfig.title}
             </h3>
             <p className="reason-manager-subtitle">
-              {selectedCategory ? `${selectedCategory} Reasons` : 'Custom Reasons'}
+              {selectedCategory ? `${selectedCategory} Reasons` : 'Custom Expense Reasons'}
             </p>
           </div>
         </div>
@@ -305,19 +231,15 @@ const CustomReasonManager = ({
           className={`tab-button ${activeTab === 'add' ? 'active' : ''}`} 
           onClick={() => setActiveTab('add')}
         >
-          <span className="tab-icon">{editingReason ? '✏️' : '➕'}</span>
-          {editingReason ? 'Edit Reason' : 'Create New'}
+          <span className="tab-icon">✏️</span>
+          Create New
         </button>
         <button 
           className={`tab-button ${activeTab === 'browse' ? 'active' : ''}`} 
           onClick={() => setActiveTab('browse')}
-          disabled={loading}
         >
           <span className="tab-icon">🔍</span>
           Browse All
-          {filteredReasons.length > 0 && (
-            <span className="reason-count">{filteredReasons.length}</span>
-          )}
         </button>
       </div>
       
@@ -346,9 +268,7 @@ const CustomReasonManager = ({
                   </div>
                 
                   <div className="form-group">
-                    <label htmlFor="reason-input">
-                      {editingReason ? 'Edit Reason' : 'New Reason'}
-                    </label>
+                    <label htmlFor="reason-input">Reason</label>
                     <div className="input-container">
                       <input
                         id="reason-input"
@@ -357,7 +277,7 @@ const CustomReasonManager = ({
                         value={newReason}
                         onChange={(e) => setNewReason(e.target.value)}
                         className="reason-input"
-                        placeholder="Enter your reason..."
+                        placeholder="Enter your reason"
                         autoComplete="off"
                         maxLength={50}
                         onKeyPress={(e) => {
@@ -378,54 +298,24 @@ const CustomReasonManager = ({
                         )}
                       </button>
                     </div>
-                    <div className="form-actions">
-                      <div className="char-counter">
-                        <span className={newReason.length > 40 ? "char-limit-near" : ""}>
-                          {newReason.length}/50
-                        </span>
-                      </div>
-                      {editingReason && (
-                        <button 
-                          type="button" 
-                          className="cancel-edit-button" 
-                          onClick={handleCancelEdit}
-                        >
-                          Cancel Edit
-                        </button>
-                      )}
+                    <div className="char-counter">
+                      <span className={newReason.length > 40 ? "char-limit-near" : ""}>
+                        {newReason.length}/50
+                      </span>
                     </div>
                   </div>
                   
-                  {/* Quick select section */}
-                  {!editingReason && commonReasons[selectedType]?.[selectedCategory] && (
+                  {commonReasons[selectedCategory] && (
                     <div className="quick-select-section">
                       <h4>Quick Select</h4>
                       <div className="quick-reasons">
-                        {commonReasons[selectedType][selectedCategory]?.map((reason, index) => (
+                        {commonReasons[selectedCategory]?.map((reason, index) => (
                           <div 
                             key={index}
                             className="quick-reason-item"
                             onClick={() => handleQuickReasonSelect(reason)}
                           >
                             {reason}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  
-                  {/* Recent reasons section */}
-                  {!editingReason && filteredReasons.length > 0 && (
-                    <div className="recent-reasons-section">
-                      <h4>Your Recent Reasons</h4>
-                      <div className="recent-reasons">
-                        {filteredReasons.slice(0, 5).map(reason => (
-                          <div 
-                            key={reason.id}
-                            className="recent-reason-item"
-                            onClick={() => handleQuickReasonSelect(reason.reason_text)}
-                          >
-                            <span className="recent-reason-text">{reason.reason_text}</span>
                           </div>
                         ))}
                       </div>
@@ -479,7 +369,7 @@ const CustomReasonManager = ({
                   <p>
                     {searchTerm 
                       ? "No matching reasons for your search" 
-                      : "You haven't created any custom reasons yet"}
+                      : "You haven't created any expense reasons yet"}
                   </p>
                   <button 
                     className="create-first-reason"
@@ -513,22 +403,9 @@ const CustomReasonManager = ({
                             e.stopPropagation();
                             handleSelectReason(reason);
                           }}
-                          title="Use this reason"
                         >
-                          Use
+                          Select
                         </button>
-                        
-                        <button
-                          className="edit-reason-button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleEditReason(reason);
-                          }}
-                          title="Edit reason"
-                        >
-                          ✏️
-                        </button>
-                        
                         {confirmDelete === reason.id ? (
                           <div className="confirm-delete" onClick={e => e.stopPropagation()}>
                             <button 
@@ -590,4 +467,4 @@ const CustomReasonManager = ({
   );
 };
 
-export default CustomReasonManager;
+export default ExpenseReasonManager;

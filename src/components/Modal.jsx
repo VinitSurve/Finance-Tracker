@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import '../styles/global/global.css';
 import { motion, AnimatePresence } from 'framer-motion';
 import '../styles/components/Modal.css';
 

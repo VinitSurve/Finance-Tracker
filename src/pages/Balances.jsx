@@ -1,3 +1,4 @@
+import React from 'react';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '../context/ThemeContext';
@@ -5,7 +6,9 @@ import { useCurrency } from '../context/CurrencyContext';
 import { supabase } from '../services/supabaseClient';
 import toast from 'react-hot-toast';
 import Modal from '../components/Modal';
+import TransferMoney from '../components/TransferMoney';
 import '../styles/pages/Balances.css';
+import '../styles/global/global.css';
 
 const Balances = () => {
   const { darkMode } = useTheme();
@@ -236,6 +239,13 @@ const Balances = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
   
+  // Add this function to refresh balances after a transfer
+  const handleTransferComplete = async () => {
+    await loadBalancesAndTypes();
+    loadRecentChanges();
+    toast.success("Balances updated successfully!");
+  };
+
   // Animation variants
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -338,6 +348,12 @@ const Balances = () => {
           </div>
           
           <div className="balances-main">
+            {/* Transfer Money Section - New Addition */}
+            <TransferMoney 
+              accounts={balances} 
+              onTransferComplete={handleTransferComplete} 
+            />
+
             {/* Accounts Tab */}
             <AnimatePresence mode="wait">
               {activeTab === 'accounts' && (

@@ -1,148 +1,129 @@
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { getReasonsByType, getReasonsByCategoryAndType, addCustomReason } from '../services/reasonService';
+import React, { useState, useEffect } from 'react';
+import { getReasonsByTypeAndCategory } from '../services/reasonService';
+import '../styles/global/global.css';
 import '../styles/components/CustomReasonSelector.css';
 
-const CustomReasonSelector = ({
-  value,
-  onChange,
-  reasonType,
-  categoryId,
-  label = "Reason",
-  placeholder = "Select a reason (optional)",
-  allowAddNew = true,
-  disabled = false,
+const CustomReasonSelector = ({ 
+  type = 'expense', 
+  category = '', 
+  value = '', 
+  onChange, 
+  onAddNewReason,
+  disabled = false 
 }) => {
-  const [reasons, setReasons] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [newReasonText, setNewReasonText] = useState('');
-  const [isAdding, setIsAdding] = useState(false);
+  const [customReasons, setCustomReasons] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [isFocused, setIsFocused] = useState(false);
 
+  // Load custom reasons when type or category changes
   useEffect(() => {
-    const fetchReasons = async () => {
-      if (!reasonType) return;
+    const loadReasons = async () => {
+      // Don't load if no category selected
+      if (!category) {
+        setCustomReasons([]);
+        return;
+      }
       
       try {
-        setIsLoading(true);
-        let data;
+        setLoading(true);
         
-        if (categoryId) {
-          data = await getReasonsByCategoryAndType(reasonType, categoryId);
-        } else {
-          data = await getReasonsByType(reasonType);
+        const result = await getReasonsByTypeAndCategory(type, category);
+        if (!result.success) {
+          throw new Error(result.error?.message || 'Failed to fetch custom reasons');
         }
         
-        setReasons(data || []);
-        setError(null);
+        setCustomReasons(result.data);
       } catch (err) {
-        console.error('Error fetching reasons:', err);
-        setError('Failed to load reasons');
+        console.error('Error loading custom reasons:', err);
+        setError(err.message);
       } finally {
-        setIsLoading(false);
+        setLoading(false);
       }
     };
+    
+    loadReasons();
+  }, [type, category]);
 
-    fetchReasons();
-  }, [reasonType, categoryId]);
+  // Handle reason selection change
+  const handleReasonChange = (e) => {
+    if (onChange) {
+      onChange(e.target.value);
+    }
+  };
 
-  const handleAddReason = async (e) => {
-    e.preventDefault();
-    if (!newReasonText.trim()) return;
-
-    try {
-      setIsAdding(true);
-      const newReason = await addCustomReason({
-        reason_type: reasonType,
-        reason_text: newReasonText.trim(),
-        category_id: categoryId,
-      });
-      
-      setReasons([...reasons, newReason]);
-      setNewReasonText('');
-      setIsAdding(false);
-      setError(null);
-      
-      // Select the newly added reason
-      onChange(newReason.id);
-    } catch (err) {
-      console.error('Error adding reason:', err);
-      setError('Failed to add new reason');
-      setIsAdding(false);
+  // Handle add new reason click
+  const handleAddReasonClick = () => {
+    if (onAddNewReason && category) {
+      onAddNewReason(type, category);
     }
   };
 
   return (
-    <div className="reason-selector">
-      <label htmlFor="reason-select">
-        {label}
-        {!categoryId && reasonType !== 'transaction' && <span className="required-hint">(Select a category first)</span>}
-      </label>
+    <div className="custom-reason-selector">
+      <div className="reason-label-container">
+        <label htmlFor="custom-reason">
+          <span className="reason-label-text">Reason</span>
+          {category && <span className="reason-category-badge">{category}</span>}
+        </label>
+        <button 
+          type="button"
+          className="add-custom-reason-btn"
+          onClick={handleAddReasonClick}
+          disabled={!category || disabled}
+        >
+          <span className="add-icon">+</span>
+          <span className="add-text">Add New</span>
+        </button>
+      </div>
       
-      {isLoading ? (
-        <div className="reason-loading">Loading reasons...</div>
-      ) : (
-        <div className="reason-select-container">
-          <select
-            id="reason-select"
-            value={value || ''}
-            onChange={(e) => onChange(e.target.value)}
-            className="reason-select"
-            disabled={disabled || (!categoryId && reasonType !== 'transaction')}
-          >
-            <option value="">{placeholder}</option>
-            {reasons.map((reason) => (
-              <option key={reason.id} value={reason.id}>
-                {reason.reason_text}
-              </option>
-            ))}
-          </select>
-          
-          {allowAddNew && (
-            <button 
-              type="button"
-              className="add-reason-btn"
-              onClick={() => setIsAdding(!isAdding)}
-              disabled={disabled || (!categoryId && reasonType !== 'transaction')}
-              aria-label={isAdding ? "Cancel adding reason" : "Add new reason"}
+      <div className="reason-select-wrapper">
+        {!category ? (
+          <div className="select-category-first-message">
+            <span className="info-icon">ℹ️</span>
+            <span>Select a category first</span>
+          </div>
+        ) : (
+          <div className={`reason-input-container ${isFocused ? 'focused' : ''} ${disabled ? 'disabled' : ''}`}>
+            <select
+              id="custom-reason"
+              className="reason-select"
+              value={value}
+              onChange={handleReasonChange}
+              disabled={!category || disabled}
+              onFocus={() => setIsFocused(true)}
+              onBlur={() => setIsFocused(false)}
             >
-              {isAdding ? '✕' : '+'}
-            </button>
-          )}
+              <option value="">Select a reason</option>
+              {customReasons.map((reason) => (
+                <option key={reason.id} value={reason.reason_text}>
+                  {reason.reason_text}
+                </option>
+              ))}
+            </select>
+            <div className="select-arrow">▼</div>
+          </div>
+        )}
+        
+        {loading && (
+          <div className="reason-loading">
+            <div className="loading-spinner"></div>
+            <span>Loading reasons...</span>
+          </div>
+        )}
+        
+        {error && <div className="reason-error">{error}</div>}
+      </div>
+      
+      {category && customReasons.length === 0 && !loading && (
+        <div className="no-reasons-message">
+          <span className="no-reasons-icon">📝</span>
+          <div className="no-reasons-content">
+            <span className="no-reasons-title">No reasons yet</span>
+            <span className="no-reasons-subtitle">Create your first custom reason!</span>
+          </div>
         </div>
       )}
-      
-      <AnimatePresence>
-        {isAdding && (
-          <motion.form 
-            className="add-reason-form"
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.3 }}
-            onSubmit={handleAddReason}
-          >
-            <input
-              type="text"
-              value={newReasonText}
-              onChange={(e) => setNewReasonText(e.target.value)}
-              placeholder="Enter new reason"
-              className="new-reason-input"
-              disabled={isAdding && disabled}
-              autoFocus
-            />
-            <button 
-              type="submit" 
-              className="save-reason-btn"
-              disabled={!newReasonText.trim() || (isAdding && disabled)}
-            >
-              Add
-            </button>
-          </motion.form>
-        )}
-      </AnimatePresence>
-      
-      {error && <div className="reason-error">{error}</div>}
     </div>
   );
 };

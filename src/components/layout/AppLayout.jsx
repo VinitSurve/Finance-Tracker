@@ -1,7 +1,9 @@
-import { useState, useEffect } from 'react';
+import React from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '../../context/ThemeContext';
+import '../../styles/global/global.css'; // Import global CSS
 import '../../styles/components/AppLayout.css';
 
 const AppLayout = ({ children }) => {
@@ -9,10 +11,16 @@ const AppLayout = ({ children }) => {
   const { darkMode, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
+  const mainContentRef = useRef(null);
 
   // Close sidebar when route changes on mobile
   useEffect(() => {
     setIsSidebarOpen(false);
+
+    // Scroll to top when route changes
+    if (mainContentRef.current) {
+      mainContentRef.current.scrollTop = 0;
+    }
   }, [location.pathname]);
 
   // Close sidebar when clicking outside on mobile
@@ -41,6 +49,28 @@ const AppLayout = ({ children }) => {
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
+  };
+
+  // Page transition variants - fixed Y position
+  const pageTransitionVariants = {
+    initial: { 
+      opacity: 0, 
+      y: 20,
+      position: 'absolute',
+      width: '100%'
+    },
+    animate: { 
+      opacity: 1, 
+      y: 0,
+      position: 'relative',
+      width: '100%'
+    },
+    exit: { 
+      opacity: 0, 
+      y: -20, 
+      position: 'absolute',
+      width: '100%'
+    }
   };
 
   return (
@@ -122,14 +152,15 @@ const AppLayout = ({ children }) => {
       </header>
 
       {/* Main content area */}
-      <main className="main-content">
+      <main className="main-content" ref={mainContentRef}>
         <AnimatePresence mode="wait">
           <motion.div
             key={location.pathname}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.2 }}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            variants={pageTransitionVariants}
+            transition={{ duration: 0.25, ease: "easeInOut" }}
           >
             {children}
           </motion.div>

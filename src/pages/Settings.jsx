@@ -4,6 +4,7 @@ import { useTheme } from '../context/ThemeContext';
 import { useCurrency } from '../context/CurrencyContext';
 import toast from 'react-hot-toast';
 import { supabase } from '../services/supabaseClient';
+import '../styles/global/global.css'; 
 import '../styles/variables.css'; // Import our new variables
 import '../styles/pages/Settings.css';
 

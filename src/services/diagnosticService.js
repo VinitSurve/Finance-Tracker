@@ -1,3 +1,4 @@
+import '../styles/global/global.css';
 import { supabase } from './supabaseClient';
 
 /**

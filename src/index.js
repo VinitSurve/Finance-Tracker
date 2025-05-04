@@ -1,4 +1,4 @@
-// ... existing imports ...
+import './styles/global/global.css';
 import * as serviceWorkerRegistration from './serviceWorkerRegistration';
 
 // Register the service worker for PWA functionality

@@ -1,6 +1,8 @@
+import React from 'react';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getCategories, addCategory } from '../services/categoryService';
+import '../styles/global/global.css';
 import '../styles/components/CategorySelector.css';
 
 const CategorySelector = ({ 

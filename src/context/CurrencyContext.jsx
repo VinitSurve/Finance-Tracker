@@ -1,4 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
+import '../styles/global/global.css';
 
 const CurrencyContext = createContext();
 

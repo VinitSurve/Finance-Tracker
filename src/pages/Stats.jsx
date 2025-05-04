@@ -1,3 +1,4 @@
+import React from 'react';
 import { useState } from 'react';
 import {
   Chart as ChartJS,
@@ -11,6 +12,7 @@ import {
   Legend,
 } from 'chart.js';
 import { Pie, Line, Bar } from 'react-chartjs-2';
+import '../styles/global/global.css';
 import '../styles/pages/Dashboard.css';
 
 // Register ChartJS components

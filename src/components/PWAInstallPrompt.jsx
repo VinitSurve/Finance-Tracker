@@ -1,5 +1,7 @@
+import React from 'react';
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import '../styles/global/global.css';
 import '../styles/components/PWAInstallPrompt.css';
 
 const PWAInstallPrompt = () => {
