@@ -332,19 +332,7 @@ const Balances = () => {
             </nav>
             
             {/* Quick Actions Panel */}
-            <div className="quick-actions-panel">
-              <h3>Quick Actions</h3>
-              <div className="quick-actions-buttons">
-                <button className="quick-action income" onClick={() => window.location.href = "/add-income"}>
-                  <span className="action-icon">💸</span>
-                  <span className="action-text">Add Income</span>
-                </button>
-                <button className="quick-action expense" onClick={() => window.location.href = "/add-expense"}>
-                  <span className="action-icon">💳</span>
-                  <span className="action-text">Add Expense</span>
-                </button>
-              </div>
-            </div>
+            
           </div>
           
           <div className="balances-main">

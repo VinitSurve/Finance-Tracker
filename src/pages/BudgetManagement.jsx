@@ -7,8 +7,8 @@ import { supabase } from '../services/supabaseClient';
 import { usePointsSystem } from '../hooks/usePointsSystem';
 import toast from 'react-hot-toast';
 import Modal from '../components/Modal';
-import CustomReasonManager from '../components/CustomReasonManager';
 import '../styles/pages/BudgetManagement.css';
+import { EXPENSE_CATEGORIES, getCategoryById, CATEGORY_TO_BUDGET_MAP } from '../constants/categories';
 
 const BudgetManagement = () => {
   const { darkMode } = useTheme();
@@ -30,18 +30,11 @@ const BudgetManagement = () => {
     category: '',
     amount: '',
     description: '',
-    reason: ''
+    duration: 30 // Default duration of 30 days
   });
   
-  // State for custom reasons
-  const [customReasons, setCustomReasons] = useState([]);
-  const [isCustomReasonModalOpen, setIsCustomReasonModalOpen] = useState(false);
-
-  // Categories for budget selection
-  const categories = [
-    'Food', 'Transportation', 'Housing', 'Entertainment', 
-    'Shopping', 'Utilities', 'Healthcare', 'Education', 'Other'
-  ];
+  // Replace the categories array with our standardized categories
+  const categories = EXPENSE_CATEGORIES;
 
   // Initialize current month/year on component load
   useEffect(() => {
@@ -60,13 +53,6 @@ const BudgetManagement = () => {
       loadBudgetsAndExpenses();
     }
   }, [selectedMonth]);
-
-  // Load custom reasons when category changes
-  useEffect(() => {
-    if (formData.category) {
-      loadCustomReasons(formData.category);
-    }
-  }, [formData.category]);
 
   // Generate month options for dropdown
   const generateMonthOptions = () => {
@@ -106,17 +92,21 @@ const BudgetManagement = () => {
       // 3. Load expenses for the date range
       const { data: expenseData, error: expenseError } = await supabase
         .from('transactions')
-        .select('category, amount')
+        .select('category_id, amount')
         .eq('type', 'expense')
         .gte('created_at', startDate)
         .lte('created_at', endDate);
       
       if (expenseError) throw expenseError;
       
-      // 4. Sum up expenses by category
+      // 4. Sum up expenses by category using the standardized category mapping
       const expensesByCategory = {};
       (expenseData || []).forEach(expense => {
-        const cat = expense.category || 'Other';
+        // Map the category_id to budget category name using our mapping
+        const cat = expense.category_id ? 
+          CATEGORY_TO_BUDGET_MAP[expense.category_id] || 'Other' : 
+          'Other';
+          
         expensesByCategory[cat] = (expensesByCategory[cat] || 0) + parseFloat(expense.amount || 0);
       });
       
@@ -135,53 +125,6 @@ const BudgetManagement = () => {
     }
   };
 
-  // Load custom reasons for budgets - update to use reason_type instead of type
-  const loadCustomReasons = async (category) => {
-    try {
-      console.log("Fetching budget reasons...");
-      // Use reason_type instead of type
-      const { data, error } = await supabase
-        .from('custom_reasons')
-        .select('*')
-        .eq('reason_type', 'budget') // Using reason_type instead of type
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      
-      console.log("Received budget reasons from DB:", data);
-      
-      // Filter by category if provided
-      const filteredReasons = category 
-        ? data.filter(reason => !reason.category || reason.category === category)
-        : data;
-        
-      setCustomReasons(filteredReasons || []);
-    } catch (error) {
-      console.error('Error loading budget reasons:', error);
-      setCustomReasons([]);
-    }
-  };
-
-  // Handle custom reason addition - update to use reason_type instead of type
-  const handleReasonAdded = (newReason) => {
-    // Update the reason with reason_type instead of type
-    const formattedReason = {
-      ...newReason,
-      reason_type: 'budget'  // Use reason_type instead of type
-    };
-    
-    setCustomReasons(prevReasons => {
-      const updated = [formattedReason, ...prevReasons];
-      console.log("Updated budget reasons:", updated);
-      return updated;
-    });
-    
-    setFormData(prevData => ({
-      ...prevData,
-      reason: formattedReason.reason_text
-    }));
-  };
-
   // Handle form submission for new/edited budget
   const handleSaveBudget = async (e) => {
     e?.preventDefault();
@@ -196,13 +139,17 @@ const BudgetManagement = () => {
       return;
     }
     
+    if (!formData.duration || parseInt(formData.duration) <= 0) {
+      toast.error('Please enter a valid duration in days');
+      return;
+    }
+    
     try {
       const budgetItem = {
-        category: formData.category,
+        category: formData.category, // This is now the standardized category name
         amount: parseFloat(formData.amount),
         month_year: selectedMonth,
-        description: formData.description || '',
-        reason: formData.reason || null
+        duration: parseInt(formData.duration)
       };
       
       if (editingBudget) {
@@ -232,7 +179,7 @@ const BudgetManagement = () => {
       new Audio('/sounds/success.mp3').play().catch(e => {});
       
       // Reset form and reload budgets
-      setFormData({ category: '', amount: '', description: '', reason: '' });
+      setFormData({ category: '', amount: '', description: '', duration: 30 });
       setShowAddForm(false);
       setEditingBudget(null);
       loadBudgetsAndExpenses();
@@ -249,7 +196,7 @@ const BudgetManagement = () => {
       category: budget.category,
       amount: budget.amount.toString(),
       description: budget.description || '',
-      reason: budget.reason || ''
+      duration: budget.duration || 30 // Use existing duration or default to 30
     });
     setEditingBudget(budget);
     setShowAddForm(true);
@@ -326,6 +273,45 @@ const BudgetManagement = () => {
     }
   };
 
+  // Calculate days remaining for a budget
+  const getDaysRemaining = (budget) => {
+    const creationDate = new Date(budget.created_at);
+    const duration = budget.duration || 30; // Default to 30 if not specified
+    const endDate = new Date(creationDate);
+    endDate.setDate(endDate.getDate() + duration);
+    
+    const today = new Date();
+    const daysRemaining = Math.ceil((endDate - today) / (1000 * 60 * 60 * 24));
+    
+    return Math.max(0, daysRemaining); // Don't return negative days
+  };
+  
+  // Get budget status based on time remaining and spending
+  const getBudgetStatus = (budget) => {
+    const daysRemaining = getDaysRemaining(budget);
+    const spent = expenses[budget.category] || 0;
+    const percentSpent = (spent / budget.amount) * 100;
+    
+    if (daysRemaining === 0) return 'expired';
+    if (percentSpent >= 100) return 'overspent';
+    if (percentSpent >= 80 && daysRemaining <= budget.duration * 0.2) return 'critical';
+    if (percentSpent >= 70 && daysRemaining <= budget.duration * 0.3) return 'warning';
+    return 'good';
+  };
+
+  // Update this helper function to use our standardized categories
+  const getCategoryEmoji = (categoryName) => {
+    // Find the category by name in our EXPENSE_CATEGORIES
+    const category = EXPENSE_CATEGORIES.find(cat => cat.name === categoryName);
+    return category ? category.icon : '🎯';
+  };
+  
+  const getCategoryColor = (categoryName) => {
+    // Find the category by name in our EXPENSE_CATEGORIES
+    const category = EXPENSE_CATEGORIES.find(cat => cat.name === categoryName);
+    return category ? category.color : '#6366f1';
+  };
+
   return (
     <div className={`budget-management ${darkMode ? 'dark' : 'light'}-mode`}>
       {/* Header Section */}
@@ -336,7 +322,7 @@ const BudgetManagement = () => {
         transition={{ duration: 0.5 }}
       >
         <div className="header-content">
-          <div className="header-icon">🎯</div>
+          
           <h1>Budget Management</h1>
           <p className="budget-subtitle">Create and track your spending limits</p>
         </div>
@@ -392,16 +378,7 @@ const BudgetManagement = () => {
         >
           <div className="section-header">
             <h2>Budget Progress</h2>
-            <button 
-              className="add-budget-btn"
-              onClick={() => {
-                setShowAddForm(!showAddForm);
-                setEditingBudget(null);
-                setFormData({ category: '', amount: '', description: '', reason: '' });
-              }}
-            >
-              {showAddForm ? 'Cancel' : '+ Add Budget'}
-            </button>
+            
           </div>
           
           {isLoading ? (
@@ -434,19 +411,25 @@ const BudgetManagement = () => {
                 const remaining = budget.amount - spent;
                 const progressStatus = getProgressColor(progress);
                 const isExpanded = expandedBudget === budget.id;
+                const daysRemaining = getDaysRemaining(budget);
+                const budgetStatus = getBudgetStatus(budget);
+                const categoryColor = getCategoryColor(budget.category);
                 
                 return (
                   <motion.div 
                     key={budget.id} 
-                    className={`budget-card ${progressStatus}`}
+                    className={`budget-card ${progressStatus} ${budgetStatus}`}
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     whileHover={{ y: -5 }}
                     transition={{ duration: 0.3 }}
+                    style={{ borderLeftColor: categoryColor }}
                   >
                     <div className="budget-card-header" onClick={() => toggleBudgetDetails(budget.id)}>
                       <div className="budget-category">
-                        <span className="category-icon">{getCategoryEmoji(budget.category)}</span>
+                        <span className="category-icon" style={{ backgroundColor: categoryColor }}>
+                          {getCategoryEmoji(budget.category)}
+                        </span>
                         <h3>{budget.category}</h3>
                       </div>
                       <div className="budget-actions">
@@ -503,6 +486,13 @@ const BudgetManagement = () => {
                       </div>
                     </div>
                     
+                    <div className="budget-timeframe">
+                      <span className={`days-remaining ${daysRemaining < 5 ? 'urgent' : ''}`}>
+                        {daysRemaining} day{daysRemaining !== 1 ? 's' : ''} remaining
+                      </span>
+                      <span className="total-duration">of {budget.duration || 30} days</span>
+                    </div>
+                    
                     <AnimatePresence>
                       {isExpanded && (
                         <motion.div 
@@ -525,6 +515,13 @@ const BudgetManagement = () => {
                             </div>
                             <div className="motivation-text">
                               {getMotivationalMessage(budget)}
+                            </div>
+                          </div>
+                          
+                          <div className="budget-duration-info">
+                            <div className="duration-label">Budget Duration:</div>
+                            <div className="duration-content">
+                              {budget.duration || 30} days (ends {new Date(new Date(budget.created_at).getTime() + (budget.duration || 30) * 24 * 60 * 60 * 1000).toLocaleDateString()})
                             </div>
                           </div>
                         </motion.div>
@@ -551,20 +548,32 @@ const BudgetManagement = () => {
                 <h2>{editingBudget ? 'Update Budget' : 'Create New Budget'}</h2>
                 
                 <form onSubmit={handleSaveBudget}>
-                  <div className="form-group">
+                  <div className="form-group category-selection-group">
                     <label htmlFor="category">Category</label>
-                    <select
-                      id="category"
-                      value={formData.category}
-                      onChange={(e) => setFormData({...formData, category: e.target.value})}
-                      className="form-select"
-                      required
-                    >
-                      <option value="">Select a category</option>
+                    
+                    <div className="category-grid">
                       {categories.map(cat => (
-                        <option key={cat} value={cat}>{cat}</option>
+                        <div
+                          key={cat.name}
+                          className={`category-item ${formData.category === cat.name ? 'selected' : ''}`}
+                          onClick={() => setFormData({...formData, category: cat.name})}
+                          style={{ 
+                            borderColor: formData.category === cat.name ? cat.color : 'var(--color-border)',
+                            backgroundColor: formData.category === cat.name ? `${cat.color}15` : 'var(--color-secondaryBg)' 
+                          }}
+                        >
+                          <div className="category-icon" style={{ backgroundColor: cat.color }}>
+                            {cat.icon}
+                          </div>
+                          <div className="category-name">{cat.name}</div>
+                          {formData.category === cat.name && (
+                            <div className="category-selected-indicator" style={{ backgroundColor: cat.color }}>
+                              ✓
+                            </div>
+                          )}
+                        </div>
                       ))}
-                    </select>
+                    </div>
                   </div>
                   
                   <div className="form-group">
@@ -596,36 +605,28 @@ const BudgetManagement = () => {
                       rows="3"
                     ></textarea>
                   </div>
-
-                  {/* Add custom reason field */}
-                  <div className="form-group custom-reason-group">
-                    <div className="reason-label-container">
-                      <label htmlFor="reason">Reason</label>
-                      <button
-                        type="button"
-                        className="add-custom-reason-btn"
-                        onClick={() => setIsCustomReasonModalOpen(true)}
-                        disabled={!formData.category}
-                      >
-                        + Add Custom Reason
-                      </button>
+                  
+                  {/* Add duration field */}
+                  <div className="form-group">
+                    <label htmlFor="duration">Budget Duration (Days)</label>
+                    <div className="duration-input-group">
+                      <input
+                        id="duration"
+                        type="number"
+                        inputMode="numeric"
+                        value={formData.duration}
+                        onChange={(e) => setFormData({...formData, duration: e.target.value})}
+                        placeholder="30"
+                        className="form-input"
+                        min="1"
+                        max="365"
+                        required
+                      />
+                      <div className="duration-info">
+                        <span className="info-icon">ℹ️</span>
+                        <span className="info-text">How many days this budget will last</span>
+                      </div>
                     </div>
-                    <select
-                      id="reason"
-                      value={formData.reason || ''}
-                      onChange={(e) => setFormData({...formData, reason: e.target.value})}
-                      disabled={isLoading || !formData.category}
-                    >
-                      <option value="">Select a reason (optional)</option>
-                      {customReasons.map(reason => (
-                        <option key={reason.id} value={reason.reason_text}>
-                          {reason.reason_text}
-                        </option>
-                      ))}
-                    </select>
-                    {!formData.category && (
-                      <p className="form-hint">Select a category first to load or add custom reasons</p>
-                    )}
                   </div>
                   
                   <div className="form-actions">
@@ -698,7 +699,7 @@ const BudgetManagement = () => {
           onClick={() => {
             setShowAddForm(!showAddForm);
             setEditingBudget(null);
-            setFormData({ category: '', amount: '', description: '', reason: '' });
+            setFormData({ category: '', amount: '', description: '', duration: 30 });
             // Scroll to form if showing
             if (!showAddForm) {
               window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -708,40 +709,8 @@ const BudgetManagement = () => {
           {showAddForm ? '✕' : '+'}
         </button>
       </div>
-
-      {/* Modal for managing custom reasons */}
-      <Modal 
-        isOpen={isCustomReasonModalOpen}
-        onClose={() => setIsCustomReasonModalOpen(false)}
-      >
-        <CustomReasonManager 
-          reasonType="budget"
-          category={formData.category || undefined}
-          onClose={() => setIsCustomReasonModalOpen(false)}
-          onReasonAdded={handleReasonAdded}
-        />
-      </Modal>
     </div>
   );
-};
-
-// Helper function to get emoji for category
-const getCategoryEmoji = (category) => {
-  if (!category) return '🎯';
-  
-  const categoryMap = {
-    'Food': '🍔',
-    'Transportation': '🚗',
-    'Housing': '🏠',
-    'Entertainment': '🎬',
-    'Shopping': '🛍️',
-    'Utilities': '💡',
-    'Healthcare': '⚕️',
-    'Education': '📚',
-    'Other': '📋'
-  };
-  
-  return categoryMap[category] || '🎯';
 };
 
 export default BudgetManagement;

@@ -307,7 +307,35 @@ const SetupBalances = () => {
               </div>
             </div>
             
-            {/* Navigation Tabs */}
+            {/* Add mobile account links - this will only show on mobile/tablet */}
+            <div className="mobile-account-links">
+              <button 
+                className={`mobile-account-link ${activeTab === 'accounts' ? 'active' : ''}`}
+                onClick={() => setActiveTab('accounts')}
+              >
+                <span className="mobile-link-icon">🏦</span>
+                <span className="mobile-link-label">My Accounts</span>
+              </button>
+              <button 
+                className={`mobile-account-link ${activeTab === 'add' ? 'active' : ''}`}
+                onClick={() => {
+                  setActiveTab('add');
+                  setIsEditing(false);
+                  setEditId(null);
+                  setNewBalance({
+                    name: '',
+                    icon: '💰',
+                    balance: '',
+                    color: '#6366f1'
+                  });
+                }}
+              >
+                <span className="mobile-link-icon">➕</span>
+                <span className="mobile-link-label">Add Account</span>
+              </button>
+            </div>
+            
+            {/* Navigation Tabs - only shows on desktop */}
             <nav className="balances-nav">
               <button 
                 className={`nav-tab ${activeTab === 'accounts' ? 'active' : ''}`}
@@ -335,20 +363,7 @@ const SetupBalances = () => {
               </button>
             </nav>
             
-            {/* Quick Actions Panel */}
-            <div className="quick-actions-panel">
-              <h3>Quick Actions</h3>
-              <div className="quick-actions-buttons">
-                <button className="quick-action income" onClick={() => navigate('/add-income')}>
-                  <span className="action-icon">💸</span>
-                  <span className="action-text">Add Income</span>
-                </button>
-                <button className="quick-action expense" onClick={() => navigate('/add-expense')}>
-                  <span className="action-icon">💳</span>
-                  <span className="action-text">Add Expense</span>
-                </button>
-              </div>
-            </div>
+            
           </div>
           
           <div className="balances-main">
@@ -513,7 +528,7 @@ const SetupBalances = () => {
                           <div className="balance-actions">
                             <button 
                               onClick={() => handleEdit(account.id)} 
-                              className="action-button edit-button"
+                              className="action-button "
                               aria-label={`Edit ${account.name}`}
                               disabled={isLoading}
                             >
@@ -538,49 +553,21 @@ const SetupBalances = () => {
           </div>
         </div>
         
-        {/* Mobile Bottom Navbar */}
-        <div className="bottom-navbar">
-          <div className="bottom-navbar-tabs">
-            <button 
-              className={`bottom-navbar-tab ${activeTab === 'accounts' ? 'active' : ''}`}
-              onClick={() => setActiveTab('accounts')}
-            >
-              <div className="tab-content">
-                <span className="bottom-navbar-icon">🏦</span>
-                <span className="bottom-navbar-label">Accounts</span>
-              </div>
-            </button>
-            <button 
-              className={`bottom-navbar-tab ${activeTab === 'add' ? 'active' : ''}`}
-              onClick={() => {
-                setActiveTab('add');
-                setIsEditing(false);
-                setEditId(null);
-                setNewBalance({
-                  name: '',
-                  icon: '💰',
-                  balance: '',
-                  color: '#6366f1'
-                });
-              }}
-            >
-              <div className="tab-content">
-                <span className="bottom-navbar-icon">➕</span>
-                <span className="bottom-navbar-label">Add</span>
-              </div>
-            </button>
-          </div>
-          
-          {/* Page title indicator */}
-          <div className="bottom-navbar-title">
-            <span className="current-page-icon">
-              {activeTab === 'accounts' ? '🏦' : '➕'}
-            </span>
-            <span className="current-page-name">
-              {activeTab === 'accounts' ? 'Accounts' : isEditing ? 'Edit Account' : 'Add Account'}
-            </span>
-          </div>
-        </div>
+        
+        
+        {/* Background Overlay for Transfer Modal */}
+        <AnimatePresence>
+          {/* This will show when the transfer modal is open */}
+          <motion.div 
+            className="modal-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{
+              display: document.querySelector('.transfer-modal') ? 'block' : 'none'
+            }}
+          />
+        </AnimatePresence>
       </div>
     </div>
   );

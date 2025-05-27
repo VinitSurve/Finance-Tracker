@@ -27,7 +27,7 @@
   font-size: clamp(2rem, 5.5vw, 2.8rem);
   font-weight: 800;
   margin-bottom: 0.5rem;
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -53,7 +53,7 @@
   transform: translateX(-50%);
   width: 80px;
   height: 3px;
-  background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+  background: linear-gradient(90deg, #3b82f6, #2563eb);
   border-radius: 5px;
 }
 
@@ -109,22 +109,22 @@
   align-items: center;
   justify-content: center;
   font-size: 2.2rem;
-  background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
   color: white;
-  box-shadow: 0 5px 15px rgba(99, 102, 241, 0.3);
+  box-shadow: 0 5px 15px rgba(59, 130, 246, 0.3);
   transition: all 0.3s ease;
 }
 
 .balances-total-icon:hover .total-balance-icon {
   transform: scale(1.05) rotate(5deg);
-  box-shadow: 0 8px 25px rgba(99, 102, 241, 0.5);
+  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.5);
 }
 
 .total-balance-value {
   font-size: 1.8rem;
   font-weight: 700;
   margin: 0;
-  background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -175,7 +175,7 @@
 }
 
 .nav-tab.active {
-  background-color: var(--color-accent);
+  background-color: #3b82f6;
   color: white;
 }
 
@@ -304,7 +304,7 @@
   width: 100%;
   padding: 0.85rem 0;
   border-radius: 10px;
-  background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
   color: white;
   font-size: 0.95rem;
   font-weight: 600;
@@ -312,7 +312,7 @@
   cursor: pointer;
   margin-top: 0.5rem;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -321,7 +321,7 @@
 
 .transfer-button:hover:not(:disabled) {
   transform: translateY(-3px);
-  box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3);
+  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
 }
 
 .transfer-button:disabled {
@@ -385,7 +385,7 @@
   font-weight: 700;
   margin-top: 0;
   margin-bottom: 1.5rem;
-  background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+  background: linear-gradient(90deg, #3b82f6, #2563eb);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -462,11 +462,11 @@
 }
 
 .icon-button.selected {
-  background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
   color: white;
-  border-color: var(--color-primary);
+  border-color: #3b82f6;
   transform: scale(1.05);
-  box-shadow: 0 5px 15px rgba(99, 102, 241, 0.3);
+  box-shadow: 0 5px 15px rgba(59, 130, 246, 0.3);
 }
 
 /* Form buttons */
@@ -498,15 +498,15 @@
 }
 
 .submit-button {
-  background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
   color: white;
   border: none;
-  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
 }
 
 .submit-button:hover {
   transform: translateY(-3px);
-  box-shadow: 0 8px 20px rgba(99, 102, 241, 0.4);
+  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
 }
 
 .submit-button:disabled {
@@ -546,28 +546,28 @@
   font-size: 1.4rem;
   font-weight: 700;
   margin: 0;
-  background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+  background: linear-gradient(90deg, #3b82f6, #2563eb);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
 .total-balance {
-  background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
   color: white;
   padding: 0.75rem 1.2rem;
   border-radius: 20px;
   font-weight: 600;
   font-size: 1rem;
-  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.2);
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.2);
   animation: pulse 2s infinite;
   position: relative;
 }
 
 @keyframes pulse {
-  0% { box-shadow: 0 4px 15px rgba(99, 102, 241, 0.2); }
-  50% { box-shadow: 0 4px 25px rgba(99, 102, 241, 0.4); }
-  100% { box-shadow: 0 4px 15px rgba(99, 102, 241, 0.2); }
+  0% { box-shadow: 0 4px 15px rgba(59, 130, 246, 0.2); }
+  50% { box-shadow: 0 4px 25px rgba(59, 130, 246, 0.4); }
+  100% { box-shadow: 0 4px 15px rgba(59, 130, 246, 0.2); }
 }
 
 /* Enhanced Balance Card List */
@@ -595,7 +595,7 @@
 .balance-card:hover {
   transform: translateY(-5px) scale(1.01);
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
-  border-color: var(--color-accent);
+  border-color: #3b82f6;
 }
 
 .dark-mode .balance-card:hover {
@@ -618,15 +618,15 @@
   justify-content: center;
   font-size: 1.8rem;
   flex-shrink: 0;
-  background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
   color: white;
-  box-shadow: 0 5px 15px rgba(99, 102, 241, 0.2);
+  box-shadow: 0 5px 15px rgba(59, 130, 246, 0.2);
   transition: all 0.3s ease;
 }
 
 .balance-card:hover .balance-icon {
   transform: scale(1.1) rotate(5deg);
-  box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3);
+  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
 }
 
 .balance-details {
@@ -645,14 +645,14 @@
 }
 
 .balance-card:hover .balance-details h3 {
-  color: var(--color-accent);
+  color: #3b82f6;
 }
 
 .balance-amount {
   margin: 0;
   font-size: 1.4rem;
   font-weight: 800;
-  background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+  background: linear-gradient(90deg, #3b82f6, #2563eb);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -688,7 +688,7 @@
   width: 42px;
   height: 42px;
   border-radius: 10px;
-  background-color: var(--color-cardBg);
+  background-color: #3b82f6;
   border: 1px solid var(--color-border);
   font-size: 1.2rem;
   cursor: pointer;
@@ -700,15 +700,18 @@
 }
 
 .action-button:hover {
-  background-color: var(--color-accent);
+  background-color: #3b82f6;
   color: white;
-  border-color: var(--color-accent);
+  border-color: #3b82f6;
   transform: translateY(-3px);
-  box-shadow: 0 5px 15px rgba(99, 102, 241, 0.3);
+  box-shadow: 0 5px 15px rgba(59, 130, 246, 0.3);
+}
+.edit-button{
+  background-color: #3b82f6;
 }
 
 .edit-button:hover {
-  background-color: #6366F1;
+  background-color: #3b82f6;
 }
 
 .delete-button:hover {
@@ -756,7 +759,7 @@
   margin: 0.8rem 0;
   font-size: 1.1rem;
   font-weight: 500;
-  background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+  background: linear-gradient(90deg, #3b82f6, #2563eb);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -781,7 +784,7 @@
   height: 3rem;
   border-radius: 50%;
   border: 3px solid rgba(99, 102, 241, 0.1);
-  border-top-color: var(--color-accent);
+  border-top-color: #3b82f6;
   animation: spinner 1s infinite linear;
 }
 
@@ -809,7 +812,7 @@
   align-items: center;
   justify-content: center;
   padding: 0.5rem;
-  background-color: var(--color-accent);
+  background-color: #3b82f6;
   color: white;
   font-weight: 600;
   font-size: 0.9rem;
@@ -852,7 +855,7 @@
 }
 
 .bottom-navbar-tab.active {
-  color: var(--color-accent);
+  color: #3b82f6;
 }
 
 .bottom-navbar-icon {
@@ -864,225 +867,148 @@
   font-weight: 500;
 }
 
-/* Responsive design - Major improvements for mobile and tablet */
-@media (max-width: 1024px) {
+/* Mobile Bottom Navbar */
+.mobile-bottom-navbar {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background-color: var(--color-cardBg);
+  border-top: 1px solid var(--color-border);
+  padding: 0.8rem 0;
+  z-index: 100;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.dark-mode .mobile-bottom-navbar {
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.mobile-nav-button {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  padding: 0.5rem;
+  background: transparent;
+  border: none;
+  color: var(--color-textSecondary);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.mobile-nav-button.active {
+  color: #3b82f6;
+}
+
+.mobile-nav-icon {
+  font-size: 1.4rem;
+}
+
+.mobile-nav-label {
+  font-size: 0.7rem;
+  font-weight: 500;
+}
+
+/* Modal Backdrop for Blur Effect */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 99;
+}
+
+/* Mobile Account Links styling */
+.mobile-account-links {
+  display: none; /* Hidden by default on desktop */
+  margin-bottom: 1.5rem;
+  background-color: var(--color-cardBg);
+  border-radius: 16px;
+  box-shadow: var(--card-shadow);
+  border: 1px solid var(--color-border);
+  overflow: hidden;
+}
+
+.mobile-account-link {
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: var(--color-textPrimary);
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border-bottom: 1px solid var(--color-border);
+  text-align: left;
+}
+
+.mobile-account-link:last-child {
+  border-bottom: none;
+}
+
+.mobile-account-link.active {
+  background-color: #3b82f6;
+  color: white;
+}
+
+.mobile-account-link:hover:not(.active) {
+  background-color: rgba(59, 130, 246, 0.1);
+}
+
+.mobile-link-icon {
+  font-size: 1.4rem;
+  margin-right: 0.8rem;
+}
+
+/* Show mobile account links on tablet/mobile */
+@media (max-width: 768px) {
+  .mobile-account-links {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .balances-nav {
+    display: none; /* Hide the desktop navigation */
+  }
+  
+  /* Hide mobile bottom navbar - use the newly added links instead */
+  .mobile-bottom-navbar {
+    display: none;
+  }
+  
+  /* Adjust layout to ensure proper flow */
   .balances-content {
     flex-direction: column;
   }
   
   .balances-sidebar {
-    flex: auto;
     width: 100%;
-    flex-direction: row;
-    flex-wrap: wrap;
-    order: 2;
-  }
-  
-  .balances-profile-container {
-    flex: 1;
-    min-width: 300px;
-    flex-direction: row;
-    justify-content: center;
-  }
-  
-  .balances-total-icon {
-    flex-direction: row;
-    align-items: center;
-    gap: 1rem;
-  }
-  
-  .total-balance-icon {
-    width: 60px;
-    height: 60px;
-    font-size: 1.8rem;
-  }
-  
-  .balances-nav {
-    flex: 2;
-    min-width: 300px;
-    flex-direction: row;
-    overflow-x: auto;
-    gap: 1rem;
-    padding: 1.2rem;
-    scrollbar-width: none; /* Hide scrollbar for Firefox */
-    -ms-overflow-style: none; /* Hide scrollbar for IE and Edge */
-    -webkit-overflow-scrolling: touch;
-  }
-  
-  .balances-nav::-webkit-scrollbar {
-    display: none; /* Hide scrollbar for Chrome/Safari/Opera */
-  }
-  
-  .nav-tab {
-    min-width: 140px;
-    flex: 0 0 auto;
-  }
-  
-  .transfer-money-panel {
-    width: 100%;
-    order: 3;
-    margin-top: 1.5rem;
-  }
-  
-  .balances-main {
-    order: 1;
+    margin-bottom: 1rem;
   }
 }
 
-@media (max-width: 768px) {
-  .setup-page {
-    padding: 1rem 1rem 6rem;
-  }
-  
-  .bottom-navbar {
-    display: flex;
-  }
-  
-  .balances-sidebar {
-    flex-direction: column;
-  }
-  
-  .balances-profile-container {
-    width: 100%;
-  }
-  
-  .balances-nav {
-    width: 100%;
-    justify-content: flex-start;
-  }
-  
-  .balance-card {
-    padding: 1.2rem;
-  }
-  
-  .balance-icon {
-    width: 50px;
-    height: 50px;
-    font-size: 1.5rem;
-  }
-  
-  .balance-amount {
-    font-size: 1.2rem;
-  }
-  
-  .balance-details h3 {
-    font-size: 1.1rem;
-  }
-  
-  .form-actions {
-    flex-direction: column;
-    gap: 0.8rem;
-  }
-  
-  .cancel-button, .submit-button {
-    width: 100%;
-  }
-  
-  .balances-grid-list {
-    grid-template-columns: 1fr;
-  }
-  
-  .balances-header-row {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.8rem;
-  }
-  
-  .total-balance {
-    width: 100%;
-    text-align: center;
-  }
-  
-  /* Improve transfer form responsiveness */
-  .transfer-form {
-    gap: 1.2rem;
-  }
-  
-  .transfer-icon-center {
-    font-size: 1.2rem;
-    margin: 0;
-  }
-  
-  .add-balance-form, .balances-list {
-    padding: 1.2rem;
-  }
-}
-
-@media (max-width: 580px) {
-  /* Improved layout for smaller screens */
-  .balances-profile-container {
-    padding: 1.2rem;
-  }
-  
-  .balances-total-icon {
-    width: 100%;
-    justify-content: space-between;
-  }
-  
-  .total-balance-value {
-    font-size: 1.5rem;
-  }
-  
-  .total-balance-details {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-  }
-}
-
+/* More specific styling for very small screens */
 @media (max-width: 480px) {
-  .setup-page {
-    padding: 1rem 0.5rem 5rem;
+  .mobile-account-link {
+    padding: 0.8rem;
   }
   
-  .balance-card {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1rem;
+  .mobile-link-icon {
+    font-size: 1.2rem;
   }
   
-  .balance-card-content {
-    width: 100%;
-  }
-  
-  .balance-actions {
-    width: 100%;
-    justify-content: flex-end;
-  }
-  
-  .icon-selector {
-    grid-template-columns: repeat(auto-fill, minmax(45px, 1fr));
-  }
-  
-  .form-group label, .transfer-field label {
+  .mobile-link-label {
     font-size: 0.9rem;
-  }
-  
-  .form-input, .transfer-select, .transfer-amount {
-    padding: 0.8rem 1rem;
-    font-size: 0.95rem;
-  }
-}
-
-@media (max-width: 360px) {
-  .balances-grid-list {
-    margin: 0 -0.5rem;
-  }
-  
-  .balance-card {
-    border-radius: 12px;
-    padding: 1rem;
-  }
-  
-  .balance-icon {
-    width: 45px;
-    height: 45px;
-    font-size: 1.3rem;
-  }
-  
-  .action-button {
-    width: 36px;
-    height: 36px;
-    font-size: 1rem;
   }
 }

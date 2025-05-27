@@ -1,66 +1,54 @@
 import '../styles/global/global.css';
 import { createClient } from '@supabase/supabase-js';
 
-// Get environment variables for Supabase connection
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+// Supabase configuration
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-// Create the Supabase client with error handling
-export const supabase = createClient(supabaseUrl, supabaseKey, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-  },
-});
+// Default user configuration for single-user mode
+export const DEFAULT_USER = {
+  id: 'default-user',
+  name: 'User',
+  email: 'user@example.com'
+};
 
-// Test the connection using existing tables instead of creating a new one
-export const testConnection = async () => {
+// Create Supabase client
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+// Override auth functions for single-user mode
+const originalGetUser = supabase.auth.getUser;
+supabase.auth.getUser = async () => {
+  // In production, you'd use:
+  // return await originalGetUser();
+  
+  // For single-user mode, always return the default user
+  return {
+    data: {
+      user: DEFAULT_USER
+    },
+    error: null
+  };
+};
+
+// Check database connection and log result
+const checkDatabaseConnection = async () => {
   try {
-    // Check if we can connect by querying existing tables
-    // First try the transactions table which should definitely exist
-    const { error: transactionsError } = await supabase
+    const { data, error } = await supabase
       .from('transactions')
       .select('count')
       .limit(1);
     
-    if (!transactionsError) {
+    if (error) {
+      console.error('Database connection failed:', error);
+    } else {
       console.log('Database connection successful (transactions table)');
-      return true;
     }
-    
-    // If transactions table fails, try user_balances
-    const { error: balancesError } = await supabase
-      .from('user_balances')
-      .select('count')
-      .limit(1);
-      
-    if (!balancesError) {
-      console.log('Database connection successful (user_balances table)');
-      return true;
-    }
-    
-    // If both fail, check if we can at least get the server time
-    const { error: systemError } = await supabase.rpc('get_server_time');
-    
-    if (!systemError) {
-      console.log('Database connection successful (system functions)');
-      return true;
-    }
-    
-    // All checks failed
-    console.error('Database connection test failed: Unable to query any tables or functions');
-    return false;
   } catch (error) {
-    console.error('Database connection test failed:', error);
-    return false;
+    console.error('Database connection check error:', error);
   }
 };
 
-// Initialize the connection test
-testConnection().then((success) => {
-  if (!success && (supabaseUrl === '' || supabaseKey === '')) {
-    console.warn('Supabase URL or key is missing. Please check your environment variables.');
-  } else if (!success) {
-    console.error('Could not connect to Supabase. Please check your credentials and network connection.');
-  }
-});
+// Run the connection check
+checkDatabaseConnection();
+
+export default supabase;

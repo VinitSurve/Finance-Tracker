@@ -22,6 +22,7 @@ const AddExpense = lazy(() => import('./pages/AddExpense'));
 const Transactions = lazy(() => import('./pages/Transactions'));
 const Settings = lazy(() => import('./pages/Settings'));
 const NotFound = lazy(() => import('./pages/NotFound'));
+const PointsPage = lazy(() => import('./pages/PointsPage'));
 const BudgetManagement = lazy(() => import('./pages/BudgetManagement'));
 
 function App() {
@@ -114,11 +115,12 @@ function App() {
               <Route path="/" element={<Dashboard />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/balances" element={<SetupBalances />} />
-              <Route path="/income/add" element={<AddIncome />} />
-              <Route path="/expense/add" element={<AddExpense />} />
               <Route path="/transactions" element={<Transactions />} />
-              <Route path="/budgets" element={<BudgetManagement />} />
+              <Route path="/add-income" element={<AddIncome />} />
+              <Route path="/add-expense" element={<AddExpense />} />
               <Route path="/settings" element={<Settings />} />
+              <Route path="/points" element={<PointsPage />} />
+              <Route path="/budgets" element={<BudgetManagement />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
             <Notifications />

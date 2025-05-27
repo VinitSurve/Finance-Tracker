@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { useCurrency } from '../context/CurrencyContext';
 import { useTheme } from '../context/ThemeContext';
+import { useCurrency } from '../context/CurrencyContext';
+import { usePointsSystem } from '../hooks/usePointsSystem';
 import { supabase } from '../services/supabaseClient';
 import toast from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
+import { INCOME_CATEGORIES } from '../constants/categories';
 import Modal from '../components/Modal';
 import CustomReasonManager from '../components/CustomReasonManager';
 import '../styles/pages/AddIncome.css';
@@ -16,22 +18,32 @@ const CalendarIcon = () => <span className="text-lg">📅</span>;
 const NotesIcon = () => <span className="text-lg">📝</span>;
 
 const AddIncome = () => {
-  const navigate = useNavigate();
   const { darkMode } = useTheme();
-  const { formatAmount, currencySymbol } = useCurrency?.() || { formatAmount: (val) => `₹${val}`, currencySymbol: '₹' };
-
+  const navigate = useNavigate();
+  const { updatePointsFromTransaction } = usePointsSystem();
+  const { formatAmount, currency, symbol: currencySymbol } = useCurrency(); // Get currency symbol and formatAmount
+  
+  // Use our standardized income categories
+  const categories = INCOME_CATEGORIES;
+  
+  const [formData, setFormData] = useState({
+    amount: '',
+    description: '',
+    category_id: '', // Changed from 'category' to 'category_id' for consistency
+    date: new Date().toISOString().split('T')[0],
+    recurring: false,
+    frequency: 'monthly',
+    paymentMethod: 'bank_transfer'
+  });
+  
   // Form state
   const [accounts, setAccounts] = useState([]);
-  const [amount, setAmount] = useState('');
-  const [description, setDescription] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedAccount, setSelectedAccount] = useState(null);
-  const [date, setDate] = useState(new Date());
-  const [customReason, setCustomReason] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [animateAmount, setAnimateAmount] = useState(false);
   const [formErrors, setFormErrors] = useState({});
   const [formSubmitAttempted, setFormSubmitAttempted] = useState(false);
+  const [customReason, setCustomReason] = useState(''); // Add this missing state
 
   // Modal state for custom reason manager
   const [isCustomReasonModalOpen, setIsCustomReasonModalOpen] = useState(false);
@@ -52,15 +64,6 @@ const AddIncome = () => {
     "Track all income sources to identify growth opportunities ✅",
     "Review your income strategy quarterly for optimization 🔍"
   ]);
-
-  const categories = [
-    { id: 'salary', name: 'Salary', icon: '💼', color: '#4CAF50' },
-    { id: 'investment', name: 'Investment', icon: '📈', color: '#2196F3' },
-    { id: 'gift', name: 'Gift', icon: '🎁', color: '#E91E63' },
-    { id: 'freelance', name: 'Freelance', icon: '💻', color: '#9C27B0' },
-    { id: 'refund', name: 'Refund', icon: '💸', color: '#FF9800' },
-    { id: 'other', name: 'Other', icon: '🔄', color: '#607D8B' }
-  ];
 
   // Custom reasons for income
   const [customReasons, setCustomReasons] = useState([]);
@@ -220,7 +223,7 @@ const AddIncome = () => {
   };
 
   const getCategoryTips = () => {
-    switch (selectedCategory) {
+    switch (formData.category_id) {
       case 'salary':
         return "Consider setting up automatic transfers on payday to your savings account.";
       case 'investment':
@@ -244,7 +247,7 @@ const AddIncome = () => {
   };
 
   const handleCategorySelect = (categoryId) => {
-    setSelectedCategory(categoryId);
+    setFormData({ ...formData, category_id: categoryId });
     if (formErrors.category) {
       setFormErrors({ ...formErrors, category: null });
     }
@@ -257,7 +260,7 @@ const AddIncome = () => {
     const regex = /^[0-9]*\.?[0-9]*$/;
 
     if (value === '' || regex.test(value)) {
-      setAmount(value);
+      setFormData({ ...formData, amount: value });
       setAnimateAmount(true);
       setTimeout(() => setAnimateAmount(false), 300);
 
@@ -293,11 +296,11 @@ const AddIncome = () => {
   const validateForm = () => {
     const errors = {};
 
-    if (!amount || parseFloat(amount) <= 0) {
+    if (!formData.amount || parseFloat(formData.amount) <= 0) {
       errors.amount = 'Please enter a valid amount';
     }
 
-    if (!selectedCategory) {
+    if (!formData.category_id) {
       errors.category = 'Please select a category';
     }
 
@@ -332,16 +335,16 @@ const AddIncome = () => {
       if (!selectedAcct) throw new Error("Selected account not found");
 
       // Get category name from the categories array
-      const categoryName = categories.find(cat => cat.id === selectedCategory)?.name || 'Other';
+      const categoryName = categories.find(cat => cat.id === formData.category_id)?.name || 'Other';
 
       // Create transaction data that matches the actual table schema
       // Note: using only created_at for timestamp
       const incomeData = {
         balance_type_id: selectedAcct.balance_type_id,
-        amount: parseFloat(amount),
+        amount: parseFloat(formData.amount),
         category: categoryName,
         type: 'income',
-        note: description || null,
+        note: formData.description || null,
         reason: customReason || null,
         created_at: new Date().toISOString()
       };
@@ -357,7 +360,7 @@ const AddIncome = () => {
       if (error) throw error;
 
       // Update account balance
-      const newBalance = parseFloat(selectedAcct.balance) + parseFloat(amount);
+      const newBalance = parseFloat(selectedAcct.balance) + parseFloat(formData.amount);
 
       const { error: updateError } = await supabase
         .from('user_balances')
@@ -366,8 +369,11 @@ const AddIncome = () => {
 
       if (updateError) throw updateError;
 
+      // Update points based on this transaction (using updated usePointsSystem)
+      await updatePointsFromTransaction(incomeData);
+      
       new Audio('/sounds/success.mp3').play().catch(e => console.log('Sound play failed:', e));
-      toast.success(`Income of ${formatAmount(amount)} added successfully!`);
+      toast.success(`Income of ${formatAmount(formData.amount)} added successfully!`);
       navigate('/dashboard', { state: { message: 'Income added successfully!' } });
     } catch (error) {
       console.error('Error adding income:', error);
@@ -377,8 +383,8 @@ const AddIncome = () => {
     }
   };
 
-  const filteredReasons = selectedCategory
-    ? customReasons.filter(reason => !reason.category || reason.category === selectedCategory)
+  const filteredReasons = formData.category_id
+    ? customReasons.filter(reason => !reason.category || reason.category === formData.category_id)
     : customReasons;
 
   const formatDate = (date) => {
@@ -455,7 +461,7 @@ const AddIncome = () => {
                 </div>
               ))}
 
-              {selectedCategory && (
+              {formData.category_id && (
                 <motion.div
                   className="ai-tip-item"
                   initial={{ opacity: 0, y: 10 }}
@@ -463,7 +469,7 @@ const AddIncome = () => {
                   transition={{ duration: 0.5 }}
                 >
                   <div className="ai-tip-text">
-                    <strong>{categories.find(c => c.id === selectedCategory)?.name} tip:</strong> {getCategoryTips()}
+                    <strong>{categories.find(c => c.id === formData.category_id)?.name} tip:</strong> {getCategoryTips()}
                   </div>
                 </motion.div>
               )}
@@ -483,13 +489,13 @@ const AddIncome = () => {
                 <div className="form-group amount-group">
                   <label htmlFor="amount">Amount</label>
                   <div className="amount-input">
-                    <span className="currency-symbol">{currencySymbol}</span>
+                    <span className="currency-symbol">{currencySymbol || '₹'}</span>
                     <motion.input
                       animate={animateAmount ? { scale: [1, 1.03, 1] } : {}}
                       type="text"
                       id="amount"
                       name="amount"
-                      value={amount}
+                      value={formData.amount}
                       onChange={handleAmountChange}
                       placeholder="0.00"
                       disabled={isSubmitting}
@@ -513,29 +519,25 @@ const AddIncome = () => {
 
                 <div className="form-group">
                   <label>Income Category</label>
-                  <div className={`category-grid ${formSubmitAttempted && formErrors.category ? "error-container" : ""}`}>
-                    {categories.map((category) => (
-                      <motion.div
+                  <div className="category-grid">
+                    {categories.map(category => (
+                      <div
                         key={category.id}
-                        whileHover={{ y: -4, boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={() => handleCategorySelect(category.id)}
-                        className={`category-item ${selectedCategory === category.id ? 'selected' : ''}`}
+                        onClick={() => setFormData({...formData, category_id: category.id})}
+                        className={`category-item ${formData.category_id === category.id ? 'selected' : ''}`}
                         style={{
-                          borderColor: selectedCategory === category.id ? category.color :
-                            formSubmitAttempted && formErrors.category ? 'var(--color-error)' : 'var(--color-border)',
-                          backgroundColor: selectedCategory === category.id ? `${category.color}10` : 'var(--color-secondaryBg)'
+                          borderColor: formData.category_id === category.id ? category.color : 'transparent',
+                          backgroundColor: formData.category_id === category.id ? `${category.color}15` : 'transparent'
                         }}
                       >
-                        <div
-                          className="category-icon"
-                          style={{ backgroundColor: `${category.color}20` }}
-                        >
-                          <span>{category.icon}</span>
+                        <div className="category-icon" style={{ backgroundColor: category.color }}>
+                          {category.icon}
                         </div>
                         <div className="category-name">{category.name}</div>
-                        {selectedCategory === category.id && <div className="category-check" style={{ backgroundColor: category.color }}>✓</div>}
-                      </motion.div>
+                        {formData.category_id === category.id && (
+                          <div className="category-selected-indicator"></div>
+                        )}
+                      </div>
                     ))}
                   </div>
                   {formSubmitAttempted && formErrors.category && (
@@ -552,7 +554,7 @@ const AddIncome = () => {
                       onClick={handleAddCustomReason}
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
-                      disabled={!selectedCategory}
+                      disabled={!formData.category_id}
                     >
                       + Add Custom Reason
                     </motion.button>
@@ -563,7 +565,7 @@ const AddIncome = () => {
                       name="customReason"
                       value={customReason}
                       onChange={handleReasonChange}
-                      disabled={isSubmitting || !selectedCategory}
+                      disabled={isSubmitting || !formData.category_id}
                       className={`reason-select ${formSubmitAttempted && formErrors.reason ? "error-border" : ""}`}
                     >
                       <option value="">Select a reason</option>
@@ -577,7 +579,7 @@ const AddIncome = () => {
                   {formSubmitAttempted && formErrors.reason && (
                     <div className="field-error-message">{formErrors.reason}</div>
                   )}
-                  {selectedCategory && filteredReasons.length === 0 && (
+                  {formData.category_id && filteredReasons.length === 0 && (
                     <motion.div
                       className="no-reasons-message"
                       initial={{ opacity: 0 }}
@@ -657,8 +659,8 @@ const AddIncome = () => {
                     <input
                       type="date"
                       id="date"
-                      value={date instanceof Date ? date.toISOString().split('T')[0] : date}
-                      onChange={(e) => setDate(e.target.value)}
+                      value={formData.date}
+                      onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                       className="date-input"
                     />
                   </div>
@@ -668,8 +670,8 @@ const AddIncome = () => {
                   <label htmlFor="description">Notes (Optional)</label>
                   <textarea
                     id="description"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     placeholder="Add any additional notes here..."
                     className="notes-textarea"
                     rows="3"
@@ -717,7 +719,7 @@ const AddIncome = () => {
       >
         <CustomReasonManager
           reasonType="income"
-          category={selectedCategory}
+          category={formData.category_id}
           onClose={() => setIsCustomReasonModalOpen(false)}
           onReasonAdded={handleReasonAdded}
         />

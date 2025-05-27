@@ -30,26 +30,26 @@
 }
 
 .transfer-money-header::after {
-  content: "";
+  content: "→";
   position: absolute;
-  bottom: -1px;
-  left: 0;
-  width: 60px;
-  height: 3px;
-  background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
-  border-radius: 3px;
-  transition: width 0.3s ease;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.5rem;
+  color: var(--color-accent);
+  font-weight: bold;
+  transition: transform 0.3s ease;
 }
 
 .transfer-money-panel:hover .transfer-money-header::after {
-  width: 100px;
+  transform: translateY(-50%) translateX(5px);
 }
 
 .header-icon {
   width: 48px;
   height: 48px;
   border-radius: 12px;
-  background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -57,12 +57,12 @@
   flex-shrink: 0;
   color: white;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 
 .transfer-money-panel:hover .header-icon {
   transform: scale(1.05) rotate(5deg);
-  box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4);
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
 }
 
 .transfer-money-header h2 {
@@ -86,9 +86,9 @@
   border-radius: 16px;
   overflow: hidden;
   transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  background: linear-gradient(145deg, #22c55e, #16a34a);
+  background: linear-gradient(145deg, #3b82f6, #2563eb);
   color: white;
-  box-shadow: 0 8px 20px rgba(34, 197, 94, 0.2);
+  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.2);
   cursor: pointer;
 }
 
@@ -169,12 +169,45 @@
   font-size: 1.1rem;
 }
 
+/* Add Modal Backdrop for blur effect */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  z-index: 99;
+}
+
 /* Transfer Modal Styling */
 .transfer-modal {
+  position: relative;
+  z-index: 100; /* Above backdrop */
   background-color: var(--color-cardBg);
   border: 1px solid var(--color-border);
   box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
   color: var(--color-textPrimary);
+  width: 90%;
+  max-width: 600px;
+  margin: 3vh auto;
+  max-height: 94vh;
+  overflow-y: auto;
+  border-radius: 16px;
+  animation: modalFadeIn 0.3s ease forwards;
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .dark-mode .transfer-modal {
@@ -190,14 +223,14 @@
 
 .transfer-modal-icon {
   font-size: 2rem;
-  background: linear-gradient(145deg, #22c55e, #16a34a);
+  background: linear-gradient(145deg, #3b82f6, #2563eb);
   width: 50px;
   height: 50px;
   border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 6px 16px rgba(34, 197, 94, 0.25);
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.25);
   color: white;
 }
 
@@ -251,6 +284,7 @@
   grid-template-columns: 1fr auto 1fr;
   gap: 0.5rem;
   margin-bottom: 1rem;
+  align-items: start; /* Keep columns aligned at top */
 }
 
 .transfer-column {
@@ -259,6 +293,10 @@
   background-color: var(--color-secondaryBg);
   border-radius: 12px;
   border: 1px solid var(--color-border);
+  height: auto; /* Allow natural height */
+  min-height: 180px; /* Set minimum height for consistent appearance */
+  display: flex;
+  flex-direction: column;
 }
 
 .transfer-column-title {
@@ -348,8 +386,8 @@
 
 .transfer-field select.has-value,
 .transfer-field input.has-value {
-  border-color: rgba(34, 197, 94, 0.5);
-  background-color: rgba(34, 197, 94, 0.08);
+  border-color: rgba(59, 130, 246, 0.5);
+  background-color: rgba(59, 130, 246, 0.08);
 }
 
 .transfer-field input:focus,
@@ -370,6 +408,7 @@
   border-radius: 10px;
   background-color: var(--color-cardBg);
   border: 1px solid var(--color-border);
+  min-height: 70px; /* Ensure minimum height */
 }
 
 .account-preview-icon {
@@ -384,17 +423,18 @@
 }
 
 .source .account-preview-icon {
-  background-color: rgba(34, 197, 94, 0.2);
-  color: #22c55e;
+  background-color: rgba(59, 130, 246, 0.2);
+  color: #3b82f6;
 }
 
 .destination .account-preview-icon {
-  background-color: rgba(34, 197, 94, 0.2);
-  color: #22c55e;
+  background-color: rgba(59, 130, 246, 0.2);
+  color: #3b82f6;
 }
 
 .account-preview-details {
   flex: 1;
+  min-width: 0; /* Allow text truncation */
 }
 
 .account-preview-name {
@@ -473,17 +513,17 @@
   transform: translateY(-50%);
   padding: 0.3rem 0.7rem;
   border-radius: 6px;
-  background-color: rgba(34, 197, 94, 0.2);
-  color: #22c55e;
+  background-color: rgba(59, 130, 246, 0.2);
+  color: #3b82f6;
   font-size: 0.7rem;
   font-weight: 700;
-  border: 1px solid rgba(34, 197, 94, 0.3);
+  border: 1px solid rgba(59, 130, 246, 0.3);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .max-button:hover {
-  background-color: rgba(34, 197, 94, 0.3);
+  background-color: rgba(59, 130, 246, 0.3);
   transform: translateY(-50%) scale(1.05);
 }
 
@@ -514,8 +554,8 @@
   margin-top: 0.8rem;
   padding: 0.8rem;
   border-radius: 10px;
-  background-color: rgba(34, 197, 94, 0.1);
-  border: 1px solid rgba(34, 197, 94, 0.2);
+  background-color: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.2);
 }
 
 .transfer-preview-text {
@@ -526,7 +566,7 @@
 
 .preview-highlight {
   font-weight: 600;
-  color: #22c55e;
+  color: #3b82f6;
 }
 
 .optional-label {
@@ -540,71 +580,296 @@
   display: flex;
   gap: 1rem;
   margin-top: 1rem;
+  position: relative; /* Change from sticky to relative */
+  z-index: 5;
+  background: transparent;
+  padding: 0;
 }
 
+.transfer-actions-container {
+  padding: 0;
+  margin: 0;
+  width: 100%;
+}
+
+/* Update Transfer Money Button with Background Color */
 .cancel-transfer-button,
 .confirm-transfer-button {
-  flex: 1;
-  padding: 1rem;
-  border-radius: 12px;
-  font-size: 0.95rem;
-  font-weight: 600;
-  cursor: pointer;
+  /* Form action buttons - Update backgrounds for better visibility */
+  border-radius: 10px;
+  padding: 0.8rem 1.2rem;
+  font-size: 0.9rem;
+  font-weight: 500;
   transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.6rem;
 }
 
+/* Update cancel button with light blue background */
 .cancel-transfer-button {
-  background-color: var(--color-secondaryBg);
+  background-color: rgba(59, 130, 246, 0.1);
   color: var(--color-textPrimary);
-  border: 1px solid var(--color-border);
+  border: 1px solid rgba(59, 130, 246, 0.3);
 }
 
 .cancel-transfer-button:hover {
-  background-color: var(--color-hover);
+  background-color: rgba(59, 130, 246, 0.2);
   transform: translateY(-2px);
 }
 
+/* Update confirm button with stronger blue gradient */
 .confirm-transfer-button {
-  background: linear-gradient(145deg, #22c55e, #16a34a);
+  background: linear-gradient(145deg, #3b82f6, #2563eb);
   color: white;
   border: none;
-  box-shadow: 0 6px 16px rgba(34, 197, 94, 0.2);
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.2);
 }
 
 .confirm-transfer-button:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(34, 197, 94, 0.3);
+  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
 }
 
-.confirm-transfer-button:disabled {
-  background: linear-gradient(145deg, #94a3b8, #64748b);
-  cursor: not-allowed;
-  opacity: 0.7;
-  transform: none;
-  box-shadow: none;
-}
-
+/* Improve button icon visibility */
 .button-icon {
   font-size: 1.1rem;
+  /* Add a slight glow effect for better visibility */
+  filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.5));
 }
 
-/* Loading indicator */
-.loading-indicator {
+.transfer-container {
+  margin-bottom: 1.5rem;
+  background-color: var(--color-cardBg);
+  border-radius: 16px;
+  box-shadow: var(--card-shadow);
+  border: 1px solid var(--color-border);
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.transfer-container:hover {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+}
+
+.dark-mode.transfer-container:hover {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+}
+
+.transfer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.2rem 1.5rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.transfer-header:hover {
+  background-color: rgba(99, 102, 241, 0.05);
+}
+
+.dark-mode .transfer-header:hover {
+  background-color: rgba(99, 102, 241, 0.1);
+}
+
+.transfer-title {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.transfer-icon {
+  font-size: 1.4rem;
+  color: var(--color-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.transfer-title h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--color-textPrimary);
+}
+
+.expand-button {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: var(--color-accent);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+  font-size: 1.2rem;
+  font-weight: 600;
+  line-height: 0;
+  transition: all 0.3s ease;
+}
+
+.expand-button:hover {
+  transform: scale(1.1);
+  background-color: var(--color-accent-hover);
+}
+
+/* Form Container */
+.transfer-form-container {
+  padding: 0 1.5rem 1.5rem;
+  overflow: hidden;
+}
+
+.transfer-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+.transfer-error {
+  background-color: rgba(239, 68, 68, 0.1);
+  border-left: 3px solid var(--color-error);
+  color: var(--color-error);
+  padding: 0.8rem 1rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+.form-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 1rem;
+  width: 100%;
+}
+
+.form-group {
+  flex: 1;
+  min-width: 0;
+}
+
+.form-group label {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  color: var(--color-textSecondary);
+}
+
+.form-group select,
+.form-group input {
+  width: 100%;
+  padding: 0.8rem 1rem;
+  border-radius: 10px;
+  border: 1px solid var(--color-border);
+  background-color: var(--color-secondaryBg);
+  color: var(--color-textPrimary);
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 0.7rem center;
+  background-size: 1.2rem;
+  padding-right: 2.5rem;
+}
+
+.form-group input {
+  background-image: none;
+  padding-right: 1rem;
+}
+
+.form-group select:focus,
+.form-group input:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1);
+}
+
+.transfer-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  color: var(--color-accent);
+  padding: 0 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.amount-input-wrapper {
+  position: relative;
+}
+
+.currency-symbol {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1rem;
+  color: var(--color-textSecondary);
+}
+
+.amount-input-wrapper input {
+  padding-left: 2rem;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.cancel-button {
+  padding: 0.8rem 1.5rem;
+  border-radius: 10px;
+  background-color: transparent;
+  border: 1px solid var(--color-border);
+  color: var(--color-textSecondary);
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.cancel-button:hover:not(:disabled) {
+  background-color: var(--color-hover);
+  transform: translateY(-2px);
+}
+
+.transfer-button {
+  padding: 0.8rem 1.5rem;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
 
-.loading-spinner {
-  width: 1.2rem;
-  height: 1.2rem;
+.transfer-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(59, 130, 246, 0.3);
+}
+
+.transfer-button:disabled,
+.cancel-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.transfer-button-spinner {
+  width: 16px;
+  height: 16px;
   border: 2px solid rgba(255, 255, 255, 0.3);
-  border-top-color: white;
   border-radius: 50%;
+  border-top-color: white;
   animation: spin 1s linear infinite;
 }
 
@@ -614,73 +879,34 @@
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
-  .transfer-fields-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .note-field {
-    grid-column: span 1;
-  }
-  
-  .transfer-actions {
+  .form-row {
     flex-direction: column;
-  }
-  
-  .cancel-transfer-button,
-  .confirm-transfer-button {
-    width: 100%;
-  }
-  
-  .transfer-content {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto auto auto;
     gap: 1rem;
   }
   
-  .transfer-direction {
+  .transfer-arrow {
     transform: rotate(90deg);
     margin: 0.5rem 0;
-  }
-  
-  .transfer-modal-title {
-    flex-direction: column;
-    text-align: center;
-  }
-
-  .transfer-button-content {
-    padding: 0.9rem 1.2rem;
-  }
-
-  .transfer-icon-wrapper {
-    width: 40px;
-    height: 40px;
-  }
-
-  .transfer-button-icon {
-    font-size: 1.5rem;
   }
 }
 
 @media (max-width: 480px) {
-  .transfer-button-subtitle {
-    display: none;
-  }
-  
-  .transfer-icon-wrapper {
-    width: 36px;
-    height: 36px;
-    border-radius: 8px;
-  }
-  
-  .transfer-button-icon {
-    font-size: 1.3rem;
-  }
-  
-  .transfer-column {
+  .transfer-header {
     padding: 1rem;
   }
   
-  .transfer-details-section {
-    padding: 1rem;
+  .transfer-form-container {
+    padding: 0 1rem 1rem;
+  }
+  
+  .form-actions {
+    flex-direction: column-reverse;
+    gap: 0.8rem;
+  }
+  
+  .cancel-button, 
+  .transfer-button {
+    width: 100%;
+    padding: 0.7rem 1rem;
   }
 }

@@ -18,6 +18,9 @@ export default defineConfig(({ mode }) => {
       '__APP_ENV__': JSON.stringify(env.NODE_ENV),
       'process.env': {
         VITE_GEMINI_API_KEY: JSON.stringify(env.VITE_GEMINI_API_KEY),
+        // Add Supabase environment variables
+        VITE_SUPABASE_URL: JSON.stringify(env.VITE_SUPABASE_URL),
+        VITE_SUPABASE_ANON_KEY: JSON.stringify(env.VITE_SUPABASE_ANON_KEY),
         // Add any other environment variables you might need here
         NODE_ENV: JSON.stringify(env.NODE_ENV)
       }

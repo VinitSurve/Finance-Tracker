@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { useCurrency } from '../context/CurrencyContext';
 import { useTheme } from '../context/ThemeContext';
+import { useCurrency } from '../context/CurrencyContext';
+import { usePointsSystem } from '../hooks/usePointsSystem';
 import { supabase } from '../services/supabaseClient';
 import toast from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
+import { EXPENSE_CATEGORIES } from '../constants/categories';
 import Modal from '../components/Modal';
 import CustomReasonManager from '../components/CustomReasonManager';
 import '../styles/global/global.css';
@@ -16,24 +18,33 @@ const CalendarIcon = () => <span className="text-lg">📅</span>;
 const NotesIcon = () => <span className="text-lg">📝</span>;
 
 const AddExpense = () => {
-  const navigate = useNavigate();
-  const { formatAmount, currencySymbol } = useCurrency();
   const { darkMode } = useTheme();
-
-  // State variables
-  const [accounts, setAccounts] = useState([]);
-  const [selectedAccount, setSelectedAccount] = useState(null);
-  const [amount, setAmount] = useState('');
-  const [category, setCategory] = useState('');
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-  const [notes, setNotes] = useState('');
-  const [customReason, setCustomReason] = useState('');
+  const navigate = useNavigate();
+  const { updatePointsFromTransaction, canSpend } = usePointsSystem();
+  const { formatAmount, currency, symbol: currencySymbol } = useCurrency();
+  
+  // Use our standardized expense categories
+  const categories = EXPENSE_CATEGORIES;
+  
+  const [formData, setFormData] = useState({
+    amount: '',
+    description: '',
+    category_id: '', // Changed from 'category' to 'category_id' for consistency
+    date: new Date().toISOString().split('T')[0],
+    recurring: false,
+    frequency: 'monthly',
+    paymentMethod: 'cash'
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
   const [isReasonModalOpen, setIsReasonModalOpen] = useState(false);
   const [customReasons, setCustomReasons] = useState([]);
   const [animateAmount, setAnimateAmount] = useState(false);
   const [formSubmitAttempted, setFormSubmitAttempted] = useState(false);
+  const [accounts, setAccounts] = useState([]);
+  const [selectedAccount, setSelectedAccount] = useState(null);
+  const [notes, setNotes] = useState('');
+  const [customReason, setCustomReason] = useState('');
 
   // Additional states for stats
   const [monthlyExpense, setMonthlyExpense] = useState(0);
@@ -47,19 +58,6 @@ const AddExpense = () => {
   // Add loading state for accounts
   const [accountsLoading, setAccountsLoading] = useState(true);
 
-  // Predefined expense categories with icons
-  const expenseCategories = [
-    { id: 'food', name: 'Food & Dining', icon: '🍔', color: '#FF5722' },
-    { id: 'transport', name: 'Transport', icon: '🚗', color: '#2196F3' },
-    { id: 'housing', name: 'Housing', icon: '🏠', color: '#9C27B0' },
-    { id: 'entertainment', name: 'Entertainment', icon: '🎬', color: '#E91E63' },
-    { id: 'shopping', name: 'Shopping', icon: '🛍️', color: '#FF9800' },
-    { id: 'healthcare', name: 'Healthcare', icon: '🏥', color: '#4CAF50' },
-    { id: 'travel', name: 'Travel', icon: '✈️', color: '#03A9F4' },
-    { id: 'bills', name: 'Bills', icon: '📱', color: '#F44336' },
-    { id: 'education', name: 'Education', icon: '📚', color: '#3F51B5' }
-  ];
-
   // Smart spending tips
   const smartTips = [
     "Use the 50/30/20 rule: 50% needs, 30% wants, 20% savings 💰",
@@ -71,7 +69,7 @@ const AddExpense = () => {
 
   // Get category-specific tips
   const getCategoryTip = () => {
-    switch(category) {
+    switch(formData.category_id) {
       case 'food':
         return "Plan meals ahead and make a shopping list to avoid impulse purchases.";
       case 'transport':
@@ -282,8 +280,10 @@ const AddExpense = () => {
   };
 
   const handleSelectCategory = (categoryId) => {
-    setCategory(categoryId);
-    setErrors({...errors, category: null});
+    setFormData({...formData, category_id: categoryId});
+    if (errors.category) {
+      setErrors({...errors, category: null});
+    }
 
     setCustomReason('');
   };
@@ -300,7 +300,7 @@ const AddExpense = () => {
     const regex = /^[0-9]*\.?[0-9]*$/;
 
     if (value === '' || regex.test(value)) {
-      setAmount(value);
+      setFormData({ ...formData, amount: value }); // Update to use formData.amount
       setAnimateAmount(true);
       setTimeout(() => setAnimateAmount(false), 300);
 
@@ -320,7 +320,7 @@ const AddExpense = () => {
   const handleReasonAdded = (newReason) => {
     const reasonWithCategory = {
       ...newReason,
-      category: category || null
+      category: formData.category_id || null // Fix to use formData.category_id
     };
 
     setCustomReasons([reasonWithCategory, ...customReasons]);
@@ -336,11 +336,11 @@ const AddExpense = () => {
   const validateForm = () => {
     const newErrors = {};
 
-    if (!amount || parseFloat(amount) <= 0) {
+    if (!formData.amount || parseFloat(formData.amount) <= 0) { // Fix to use formData.amount
       newErrors.amount = 'Please enter a valid amount';
     }
 
-    if (!category) {
+    if (!formData.category_id) { // Fix to use formData.category_id
       newErrors.category = 'Please select a category';
     }
 
@@ -372,13 +372,13 @@ const AddExpense = () => {
       const selectedAcct = accounts.find(acc => acc.id === selectedAccount);
       if (!selectedAcct) throw new Error("Selected account not found");
 
-      const categoryName = expenseCategories.find(cat => cat.id === category)?.name || category;
+      const categoryName = categories.find(cat => cat.id === formData.category_id)?.name || formData.category_id;
 
       // Create transaction data that matches the actual table schema
       // Note: Using created_at for timestamp, not setting 'date' field since it doesn't exist
       const expenseData = {
         balance_type_id: selectedAcct.balance_type_id,
-        amount: parseFloat(amount) * -1, // Make amount negative for expenses
+        amount: parseFloat(formData.amount) * -1, // Fix to use formData.amount, make it negative
         category: categoryName,
         type: 'expense',
         note: notes || null,
@@ -393,13 +393,16 @@ const AddExpense = () => {
 
       if (error) throw error;
 
-      const newBalance = parseFloat(selectedAcct.balance) - parseFloat(amount);
+      const newBalance = parseFloat(selectedAcct.balance) - parseFloat(formData.amount); // Fix to use formData.amount
       const { error: updateError } = await supabase
         .from('user_balances')
         .update({ amount: newBalance })
         .eq('id', selectedAccount);
 
       if (updateError) throw updateError;
+
+      // Update points based on this transaction (using updated usePointsSystem)
+      await updatePointsFromTransaction(expenseData);
 
       toast.success('Expense added successfully!');
       navigate('/dashboard', { state: { message: 'Expense added successfully!' } });
@@ -411,8 +414,8 @@ const AddExpense = () => {
     }
   };
 
-  const filteredReasons = category
-    ? customReasons.filter(reason => !reason.category || reason.category === category)
+  const filteredReasons = formData.category_id
+    ? customReasons.filter(reason => !reason.category || reason.category === formData.category_id)
     : customReasons;
 
   return (
@@ -489,7 +492,7 @@ const AddExpense = () => {
                 </div>
               ))}
               
-              {category && (
+              {formData.category_id && (
                 <motion.div 
                   className="ai-tip-item"
                   initial={{ opacity: 0, y: 10 }}
@@ -497,7 +500,7 @@ const AddExpense = () => {
                   transition={{ duration: 0.5 }}
                 >
                   <div className="ai-tip-text">
-                    <strong>{expenseCategories.find(c => c.id === category)?.name} tip:</strong> {getCategoryTip()}
+                    <strong>{categories.find(c => c.id === formData.category_id)?.name} tip:</strong> {getCategoryTip()}
                   </div>
                 </motion.div>
               )}
@@ -523,7 +526,7 @@ const AddExpense = () => {
                       type="text"
                       id="amount"
                       name="amount"
-                      value={amount}
+                      value={formData.amount} // Fix to use formData.amount
                       onChange={handleAmountChange}
                       placeholder="0.00"
                       disabled={isSubmitting}
@@ -547,29 +550,25 @@ const AddExpense = () => {
                 
                 <div className="form-group">
                   <label>Expense Category</label>
-                  <div className={`category-grid ${formSubmitAttempted && errors.category ? "error-container" : ""}`}>
-                    {expenseCategories.map((cat) => (
-                      <motion.div
-                        key={cat.id}
-                        whileHover={{ y: -4, boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={() => handleSelectCategory(cat.id)}
-                        className={`category-item ${category === cat.id ? 'selected' : ''}`}
+                  <div className="category-grid">
+                    {categories.map(category => (
+                      <div
+                        key={category.id}
+                        onClick={() => setFormData({...formData, category_id: category.id})}
+                        className={`category-item ${formData.category_id === category.id ? 'selected' : ''}`}
                         style={{
-                          borderColor: category === cat.id ? cat.color : 
-                                     formSubmitAttempted && errors.category ? 'var(--color-error)' : 'var(--color-border)',
-                          backgroundColor: category === cat.id ? `${cat.color}10` : 'var(--color-secondaryBg)'
+                          borderColor: formData.category_id === category.id ? category.color : 'transparent',
+                          backgroundColor: formData.category_id === category.id ? `${category.color}15` : 'transparent'
                         }}
                       >
-                        <div 
-                          className="category-icon"
-                          style={{ backgroundColor: `${cat.color}20` }}
-                        >
-                          <span>{cat.icon}</span>
+                        <div className="category-icon" style={{ backgroundColor: category.color }}>
+                          {category.icon}
                         </div>
-                        <div className="category-name">{cat.name}</div>
-                        {category === cat.id && <div className="category-check" style={{ backgroundColor: cat.color }}>✓</div>}
-                      </motion.div>
+                        <div className="category-name">{category.name}</div>
+                        {formData.category_id === category.id && (
+                          <div className="category-selected-indicator"></div>
+                        )}
+                      </div>
                     ))}
                   </div>
                   {formSubmitAttempted && errors.category && (
@@ -586,7 +585,7 @@ const AddExpense = () => {
                       onClick={handleOpenReasonModal}
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
-                      disabled={!category}
+                      disabled={!formData.category_id} // Changed: category -> formData.category_id
                     >
                       + Add Custom Reason
                     </motion.button>
@@ -597,7 +596,7 @@ const AddExpense = () => {
                       name="customReason"
                       value={customReason}
                       onChange={handleReasonChange}
-                      disabled={isSubmitting || !category}
+                      disabled={isSubmitting || !formData.category_id} // Changed: category -> formData.category_id
                       className={`reason-select ${formSubmitAttempted && errors.customReason ? "error-border" : ""}`}
                     >
                       <option value="">Select a reason</option>
@@ -611,7 +610,7 @@ const AddExpense = () => {
                   {formSubmitAttempted && errors.customReason && (
                     <div className="field-error-message">{errors.customReason}</div>
                   )}
-                  {category && filteredReasons.length === 0 && (
+                  {formData.category_id && filteredReasons.length === 0 && ( // Changed: category -> formData.category_id
                     <motion.div 
                       className="no-reasons-message"
                       initial={{ opacity: 0 }}
@@ -619,10 +618,10 @@ const AddExpense = () => {
                       transition={{ delay: 0.2 }}
                     >
                       <span className="no-reasons-icon">📝</span>
-                      <span>No reasons found for {expenseCategories.find(c => c.id === category)?.name}. Add a custom reason.</span>
+                      <span>No reasons found for {categories.find(c => c.id === formData.category_id)?.name}. Add a custom reason.</span>
                     </motion.div>
                   )}
-                  {!category && (
+                  {!formData.category_id && ( // Changed: category -> formData.category_id
                     <motion.div 
                       className="no-reasons-message"
                       initial={{ opacity: 0 }}
@@ -705,8 +704,8 @@ const AddExpense = () => {
                       type="date"
                       id="date"
                       name="date"
-                      value={date}
-                      onChange={(e) => setDate(e.target.value)}
+                      value={formData.date}
+                      onChange={(e) => setFormData({...formData, date: e.target.value})}
                       className="date-input"
                       max={new Date().toISOString().split('T')[0]}
                     />
@@ -767,8 +766,8 @@ const AddExpense = () => {
       >
         <CustomReasonManager 
           reasonType="expense"
-          category={category}
-          categoryName={expenseCategories.find(c => c.id === category)?.name}
+          category={formData.category_id} // Changed: category -> formData.category_id
+          categoryName={categories.find(c => c.id === formData.category_id)?.name} // Changed: category -> formData.category_id
           userId={userId}
           onClose={handleCloseReasonModal}
           onReasonAdded={handleReasonAdded}

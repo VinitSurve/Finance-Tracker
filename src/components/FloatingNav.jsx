@@ -1,10 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import '../styles/global/global.css'; // Import global CSS
+import { useTheme } from '../context/ThemeContext';
 import '../styles/components/FloatingNav.css';
 
 const FloatingNav = () => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const { darkMode } = useTheme();
   const location = useLocation();
   const navItemsRef = useRef(null);
   const activeItemRef = useRef(null);
@@ -12,11 +13,12 @@ const FloatingNav = () => {
   
   const navItems = [
     { path: '/dashboard', icon: '📊', label: 'Dashboard' },
-    { path: '/balances', icon: '💰', label: 'Balances' },
-    { path: '/transactions', icon: '🔄', label: 'Transactions' },
-    { path: '/income/add', icon: '➕', label: 'Add' },
-    { path: '/expense/add', icon: '➖', label: 'Expense' },
-    { path: '/budgets', icon: '🎯', label: 'Budgets' },
+    { path: '/balances', icon: '🏦', label: 'Balances' },
+    { path: '/transactions', icon: '💸', label: 'Transactions' },
+    { path: '/add-income', icon: '💰', label: 'Add Income' },
+    { path: '/add-expense', icon: '💳', label: 'Add Expense' },
+    { path: '/budgets', icon: '📝', label: 'Budgets' },
+    { path: '/points', icon: '🏆', label: 'Points' },
     { path: '/settings', icon: '⚙️', label: 'Settings' }
   ];
   
@@ -41,22 +43,36 @@ const FloatingNav = () => {
   useEffect(() => {
     if (isExpanded && navItemsRef.current && activeItemRef.current) {
       setTimeout(() => {
-        const container = navItemsRef.current;
-        const activeItem = activeItemRef.current;
-        
-        if (!container || !activeItem) return;
-        
-        // Scroll the active item into view with a smooth animation
-        activeItem.scrollIntoView({
-          behavior: 'smooth',
-          block: 'nearest'
-        });
+        try {
+          // Try modern scrollIntoView with options
+          activeItemRef.current.scrollIntoView({
+            behavior: 'smooth',
+            block: 'nearest',
+            inline: 'center'
+          });
+        } catch (error) {
+          // Fallback for older browsers
+          const container = navItemsRef.current;
+          const activeItem = activeItemRef.current;
+          
+          if (!container || !activeItem) return;
+          
+          // Calculate scroll position to center the active item
+          const scrollPosition = activeItem.offsetLeft - (container.offsetWidth / 2) + (activeItem.offsetWidth / 2);
+          container.scrollLeft = scrollPosition;
+        }
       }, 300);
     }
   }, [isExpanded]);
   
+  // Add haptic feedback on toggle (for supported devices)
   const toggleExpand = () => {
     setIsExpanded(!isExpanded);
+    
+    // Add haptic feedback if available
+    if ('vibrate' in navigator) {
+      navigator.vibrate(3);
+    }
   };
   
   // Handle navigation click - scroll to top when navigating to a new page
@@ -75,16 +91,11 @@ const FloatingNav = () => {
     
     if (supportsNativeSmoothScroll) {
       // Use enhanced smooth scroll with custom timing
-      const scrollToTop = () => {
-        const scrollOptions = {
-          top: 0,
-          left: 0,
-          behavior: 'smooth'
-        };
-        window.scrollTo(scrollOptions);
-      };
-      
-      scrollToTop();
+      window.scrollTo({
+        top: 0,
+        left: 0,
+        behavior: 'smooth'
+      });
     } else {
       // Use custom smooth scrolling for browsers that don't support it
       const duration = Math.min(1200, Math.max(800, currentScrollPosition / 2));
@@ -117,12 +128,13 @@ const FloatingNav = () => {
     <div className="floating-nav-container">
       <div 
         ref={navRef}
-        className={`floating-nav ${isExpanded ? 'expanded' : ''}`}
+        className={`floating-nav ${isExpanded ? 'expanded' : ''} ${darkMode ? 'dark-mode' : 'light-mode'}`}
       >
         <button 
           className="nav-toggle"
           onClick={toggleExpand}
           aria-label="Toggle navigation"
+          aria-expanded={isExpanded}
         >
           {isExpanded ? '✕' : '≡'}
         </button>
@@ -131,18 +143,25 @@ const FloatingNav = () => {
           className={`nav-items ${isExpanded ? 'visible' : ''}`}
           ref={navItemsRef}
         >
-          {navItems.map((item) => (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
-              onClick={handleNavClick}
-              ref={location.pathname === item.path ? activeItemRef : null}
-            >
-              <span className="nav-icon">{item.icon}</span>
-              <span className="nav-label">{item.label}</span>
-            </NavLink>
-          ))}
+          {navItems.map((item) => {
+            // Check if this item corresponds to the current path
+            const isActive = location.pathname === item.path || 
+                            (item.path === '/dashboard' && location.pathname === '/');
+            
+            return (
+              <NavLink
+                key={item.path}
+                to={item.path}
+                className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                onClick={handleNavClick}
+                ref={isActive ? activeItemRef : null}
+                end={item.path === '/'}
+              >
+                <span className="nav-icon">{item.icon}</span>
+                <span className="nav-label">{item.label}</span>
+              </NavLink>
+            );
+          })}
         </div>
       </div>
     </div>

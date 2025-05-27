@@ -1,60 +1,57 @@
 :root {
-  /* These will be dynamically updated by ThemeContext */
-  --color-primary: #111827;
-  --color-accent: #F59E0B;
-  --color-background: #F5F5F5;
-  --color-secondaryBg: #FFFFFF;
+  --color-primary: #111111;
+  --color-accent: #4A90E2;
+  --color-background: #F9FAFB;
+  --color-secondaryBg: #F1F3F5;
   --color-cardBg: #FFFFFF;
-  --color-textPrimary: #0F172A;
-  --color-textSecondary: #6B7280;
+  --color-textPrimary: #111111;
+  --color-textSecondary: #555555;
   --color-border: #D1D5DB;
-  --color-success: #10B981;
-  --color-error: #EF4444;
-  --color-warning: #F59E0B;
-  --color-dashboardGradient: linear-gradient(135deg, #111827 0%, #334155 100%);
+  --color-success: #3CB371;
+  --color-error: #FF6B6B;
+  --color-warning: #FFC107;
+  --color-dashboardGradient: linear-gradient(135deg, #4A90E2 0%, #111111 100%);
   --color-incomePageBg: #ECFDF5;
   --color-expensePageBg: #FEF2F2;
   --color-budgetPageBg: #FFF7ED;
 
   /* Wallet/Account card colors */
-  --color-wallet: #F59E0B;
-  --color-bank: #2563EB;
-  --color-gpay: #4F46E5;
-  --color-piggy: #EC4899;
+  --color-wallet: #FFD580;
+  --color-bank: #4A90E2;
+  --color-gpay: #4A90E2;
+  --color-piggy: #E85D75;
 
   /* Additional semantic colors */
   --color-income: var(--color-success);
   --color-expense: var(--color-error);
   --color-shadow: rgba(0, 0, 0, 0.1);
   --color-overlay: rgba(0, 0, 0, 0.5);
-  
-  /* Card effects */
+
+  /* Glass effect */
   --glassmorphism-bg: rgba(255, 255, 255, 0.8);
-  --glassmorphism-backdrop-filter: blur(12px);
   --glassmorphism-border: 1px solid rgba(255, 255, 255, 0.2);
-  --card-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+  --glassmorphism-backdrop-filter: blur(12px);
+  --card-shadow: 0px 4px 20px rgba(0, 0, 0, 0.2);
 }
 
-/* Dark mode variables - these will be applied via JavaScript in ThemeContext */
 .dark-mode {
-  --color-primary: #F9FAFB;
-  --color-accent: #FBBF24;
-  --color-background: #0A0A0A;
-  --color-secondaryBg: #1C1C1E;
-  --color-cardBg: #1F2937;
-  --color-textPrimary: #E5E7EB;
-  --color-textSecondary: #9CA3AF;
-  --color-border: #374151;
-  --color-success: #34D399;
-  --color-error: #F87171;
-  --color-warning: #FBBF24;
-  --color-dashboardGradient: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
-  --color-incomePageBg: #064E3B;
-  --color-expensePageBg: #7F1D1D;
-  --color-budgetPageBg: #450A0A;
-  
-  /* Card effects - dark mode */
-  --glassmorphism-bg: rgba(31, 41, 55, 0.7);
+  --color-primary: #111111;
+  --color-accent: #4A90E2;
+  --color-background: #111111;
+  --color-secondaryBg: #222222;
+  --color-cardBg: #1C1C1C;
+  --color-textPrimary: #FFFFFF;
+  --color-textSecondary: #CCCCCC;
+  --color-border: #333333;
+  --color-success: #5EC07C;
+  --color-error: #E85D75;
+  --color-warning: #FFD580;
+  --color-dashboardGradient: linear-gradient(135deg, #1C1C1C 0%, #000000 100%);
+  --color-incomePageBg: #0A372B;
+  --color-expensePageBg: #3C1212;
+  --color-budgetPageBg: #302011;
+
+  --glassmorphism-bg: rgba(31, 31, 31, 0.7);
   --glassmorphism-border: 1px solid rgba(255, 255, 255, 0.08);
   --card-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
 }
@@ -62,10 +59,10 @@
 /* Luxury card styles */
 .luxury-card {
   background-color: var(--color-cardBg);
-  border-radius: 12px;
+  border-radius: 16px;
   box-shadow: var(--card-shadow);
   padding: 20px;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
 }
 
 .luxury-card:hover {
@@ -80,7 +77,7 @@
 /* Account card colors */
 .wallet-card {
   background-color: var(--color-wallet);
-  color: white;
+  color: var(--color-textPrimary);
 }
 
 .bank-card {
@@ -101,9 +98,9 @@
 /* Button styles */
 .btn {
   padding: 10px 16px;
-  border-radius: 8px;
+  border-radius: 12px;
   font-weight: 500;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease-in-out;
   border: none;
   cursor: pointer;
 }
@@ -115,7 +112,7 @@
 
 .dark-mode .btn-primary {
   background-color: var(--color-primary);
-  color: var(--color-background);
+  color: var(--color-textPrimary);
 }
 
 .btn-accent {
@@ -135,10 +132,10 @@
 
 /* Glass effect */
 .glass {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--glassmorphism-bg);
+  backdrop-filter: var(--glassmorphism-backdrop-filter);
+  -webkit-backdrop-filter: var(--glassmorphism-backdrop-filter);
+  border: var(--glassmorphism-border);
 }
 
 .dark-mode .glass {
