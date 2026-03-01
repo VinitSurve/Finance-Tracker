@@ -107,15 +107,21 @@ export const createCustomReason = async (reasonData) => {
     
     // Log for debugging
     console.log('Creating custom reason with data:', reasonData);
+    // Get authenticated user
+    const { data: userData } = await supabase.auth.getUser();
+    
+    if (!userData?.user) {
+      return { success: false, error: "User not authenticated" };
+    }
     
     // Create a properly formatted object that matches the database schema
     const dataToInsert = {
+      user_id: userData.user.id,
       reason_text: reasonData.reason_text.trim(),
       category: reasonData.category,
       type: reasonData.type, // 'income' or 'expense'
       reason_type: reasonData.reason_type || 'transaction',
       created_at: new Date().toISOString()
-      // user_id will be handled by RLS policies
     };
     
     const { data, error } = await supabase
@@ -233,6 +239,16 @@ export const debugCustomReasonsTable = async () => {
   try {
     console.log('Debugging custom_reasons table...');
     
+    // Get authenticated user first
+    const { data: userData } = await supabase.auth.getUser();
+    
+    if (!userData?.user) {
+      return {
+        exists: false,
+        error: 'User not authenticated'
+      };
+    }
+    
     // Try to get the definition
     const { data: tableData, error: tableError } = await supabase
       .from('custom_reasons')
@@ -249,6 +265,7 @@ export const debugCustomReasonsTable = async () => {
     
     // Try to insert a test record
     const testReason = {
+      user_id: userData.user.id,
       reason_text: 'TEST_DEBUG_REASON',
       category: 'Test',
       type: 'expense',

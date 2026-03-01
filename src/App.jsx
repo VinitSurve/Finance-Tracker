@@ -1,5 +1,6 @@
 import { lazy, Suspense, useState, useEffect } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { useAuth } from './context/AuthContext';
 import { Toaster } from 'react-hot-toast';
 import { ThemeProvider } from './context/ThemeContext';
 import { CurrencyProvider } from './context/CurrencyContext';
@@ -24,6 +25,23 @@ const Settings = lazy(() => import('./pages/Settings'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 const PointsPage = lazy(() => import('./pages/PointsPage'));
 const BudgetManagement = lazy(() => import('./pages/BudgetManagement'));
+const Login = lazy(() => import('./pages/Login'));
+
+// Protected Route wrapper
+function ProtectedRoute({ children }) {
+  const { user, loading } = useAuth();
+  const location = useLocation();
+
+  if (loading) {
+    return <LoadingScreen />;
+  }
+
+  if (!user) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  return children;
+}
 
 function App() {
   // State for offline detection
@@ -59,24 +77,7 @@ function App() {
         const { data: { session } } = await supabase.auth.getSession();
         
         if (session?.user) {
-          const { user } = session;
-          
-          // Get user profile data
-          const { data, error } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', user.id)
-            .single();
-          
-          if (error) {
-            console.error('Error fetching user profile:', error);
-          } else {
-            // Update user data in state
-            setUserData({
-              ...user,
-              profile: data
-            });
-          }
+          setUserData(session.user);
         }
       } catch (error) {
         console.error('Error getting user data:', error);
@@ -112,15 +113,19 @@ function App() {
           )}
           <Suspense fallback={<LoadingScreen />}>
             <Routes>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/balances" element={<SetupBalances />} />
-              <Route path="/transactions" element={<Transactions />} />
-              <Route path="/add-income" element={<AddIncome />} />
-              <Route path="/add-expense" element={<AddExpense />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/points" element={<PointsPage />} />
-              <Route path="/budgets" element={<BudgetManagement />} />
+              {/* Public route */}
+              <Route path="/login" element={<Login />} />
+              
+              {/* Protected routes */}
+              <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+              <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+              <Route path="/balances" element={<ProtectedRoute><SetupBalances /></ProtectedRoute>} />
+              <Route path="/transactions" element={<ProtectedRoute><Transactions /></ProtectedRoute>} />
+              <Route path="/add-income" element={<ProtectedRoute><AddIncome /></ProtectedRoute>} />
+              <Route path="/add-expense" element={<ProtectedRoute><AddExpense /></ProtectedRoute>} />
+              <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+              <Route path="/points" element={<ProtectedRoute><PointsPage /></ProtectedRoute>} />
+              <Route path="/budgets" element={<ProtectedRoute><BudgetManagement /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
             <Notifications />

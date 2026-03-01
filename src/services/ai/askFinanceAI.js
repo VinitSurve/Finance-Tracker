@@ -1,9 +1,9 @@
 import '../../styles/global/global.css';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-// Get API key from environment variable
+// Get API key from environment variable - DO NOT hardcode keys!
 // Note: In Vite, environment variables must start with VITE_ to be exposed
-const apiKey = process.env.VITE_GEMINI_API_KEY || 'AIzaSyAq8W81XFjsaHpKTZY3fm0puhdldfYuxeA';
+const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
 const genAI = new GoogleGenerativeAI(apiKey);
 
 export async function askFinanceAI(prompt) {

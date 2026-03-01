@@ -164,13 +164,21 @@ const SetupBalances = () => {
           .maybeSingle();
           
         if (!existingType) {
+          // Get current user
+          const { data: { user } } = await supabase.auth.getUser();
+          
+          if (!user) {
+            throw new Error('You must be logged in to create balance types');
+          }
+          
           // Create new balance type
           const { data: newTypeData, error: createTypeError } = await supabase
             .from('balance_types')
             .insert([{
               name: newBalance.name,
               icon: newBalance.icon || '💰',
-              is_default: false
+              is_default: false,
+              created_by: user.id
             }])
             .select('id')
             .single();
@@ -181,12 +189,20 @@ const SetupBalances = () => {
           balanceTypeId = existingType.id;
         }
         
-        // Insert new balance with balance type ID
+        // Get current user for user_balances
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) {
+          throw new Error('You must be logged in to create balances');
+        }
+        
+        // Insert new balance with balance type ID and user_id
         const { error: insertError } = await supabase
           .from('user_balances')
           .insert([{
             balance_type_id: balanceTypeId,
-            amount: newBalance.balance
+            amount: newBalance.balance,
+            user_id: user.id
           }]);
         
         if (insertError) throw insertError;

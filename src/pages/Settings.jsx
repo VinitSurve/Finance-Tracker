@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useTheme } from '../context/ThemeContext';
 import { useCurrency } from '../context/CurrencyContext';
+import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { supabase } from '../services/supabaseClient';
 import '../styles/global/global.css'; 
@@ -11,6 +13,8 @@ import '../styles/pages/Settings.css';
 const Settings = () => {
   const { darkMode, toggleDarkMode } = useTheme();
   const { currency, setCurrency } = useCurrency();
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
   const [selectedCurrency, setSelectedCurrency] = useState(currency);
   const [notifications, setNotifications] = useState(true);
   const [doNotDisturb, setDoNotDisturb] = useState(false); // New DND state
@@ -18,12 +22,23 @@ const Settings = () => {
   const [dndEndTime, setDndEndTime] = useState(null); // When DND will end
   const [dataExported, setDataExported] = useState(false);
   const [userProfile, setUserProfile] = useState({
-    name: 'Vinitt',
-    email: 'user@example.com',
+    name: user?.email?.split('@')[0] || 'User',
+    email: user?.email || 'user@example.com',
     profileImage: null
   });
   const [activeTab, setActiveTab] = useState('profile');
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Update user profile when auth user changes
+  useEffect(() => {
+    if (user) {
+      setUserProfile({
+        name: user.email?.split('@')[0] || 'User',
+        email: user.email,
+        profileImage: null
+      });
+    }
+  }, [user]);
   
   // Currencies for selection
   const currencies = [
@@ -255,6 +270,18 @@ const Settings = () => {
               >
                 <span className="tab-icon">📊</span>
                 <span className="tab-label">Data</span>
+              </button>
+              
+              {/* Sign Out Button */}
+              <button 
+                className="nav-tab sign-out-button"
+                onClick={async () => {
+                  await signOut();
+                  navigate('/login');
+                }}
+              >
+                <span className="tab-icon">🚪</span>
+                <span className="tab-label">Sign Out</span>
               </button>
             </nav>
           </div>

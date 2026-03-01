@@ -344,7 +344,8 @@ const AddExpense = () => {
       newErrors.category = 'Please select a category';
     }
 
-    if (!customReason) {
+    // Custom reason is only required if category is 'other'
+    if (formData.category_id === 'other' && !customReason) {
       newErrors.customReason = 'Please enter a reason for this expense';
     }
 
@@ -369,20 +370,32 @@ const AddExpense = () => {
     setIsSubmitting(true);
 
     try {
+      // Get authenticated user
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        throw new Error('You must be logged in to add expenses');
+      }
+
       const selectedAcct = accounts.find(acc => acc.id === selectedAccount);
       if (!selectedAcct) throw new Error("Selected account not found");
 
       const categoryName = categories.find(cat => cat.id === formData.category_id)?.name || formData.category_id;
 
+      // For 'Other' category, use custom reason; otherwise use custom reason if provided, or category name
+      const reasonToUse = formData.category_id === 'other' 
+        ? customReason 
+        : (customReason || categoryName);
+
       // Create transaction data that matches the actual table schema
       // Note: Using created_at for timestamp, not setting 'date' field since it doesn't exist
       const expenseData = {
+        user_id: user.id,
         balance_type_id: selectedAcct.balance_type_id,
         amount: parseFloat(formData.amount) * -1, // Fix to use formData.amount, make it negative
         category: categoryName,
         type: 'expense',
-        note: notes || null,
-        reason: customReason,
+        description: notes || null,
+        reason: reasonToUse,
         created_at: new Date().toISOString()
       };
 

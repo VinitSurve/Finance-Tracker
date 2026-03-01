@@ -152,6 +152,81 @@
   margin-top: auto;
 }
 
+/* Savings Rate Card */
+.savings-rate {
+  grid-column: span 1;
+}
+
+.savings-rate .stat-value {
+  font-size: clamp(1.5rem, 4vw, 2rem);
+  font-weight: 700;
+  color: var(--color-accent);
+  margin-bottom: 0.5rem;
+  line-height: 1.2;
+}
+
+/* Average Expense Card */
+.avg-expense {
+  grid-column: span 1;
+}
+
+.avg-expense .stat-value {
+  font-size: clamp(1.5rem, 4vw, 2rem);
+  font-weight: 700;
+  color: #f59e0b;
+  margin-bottom: 0.5rem;
+  line-height: 1.2;
+  word-break: break-word;
+}
+
+/* Largest Expense Card */
+.largest-expense {
+  grid-column: span 1;
+}
+
+.largest-expense .stat-value {
+  font-size: clamp(1.5rem, 4vw, 2rem);
+  font-weight: 700;
+  color: #ef4444;
+  margin-bottom: 0.5rem;
+  line-height: 1.2;
+  word-break: break-word;
+}
+
+/* Transaction Count Card */
+.transaction-count {
+  grid-column: span 1;
+}
+
+.transaction-count .stat-value {
+  font-size: clamp(1.5rem, 4vw, 2rem);
+  font-weight: 700;
+  color: #8b5cf6;
+  margin-bottom: 0.5rem;
+  line-height: 1.2;
+}
+
+/* Top Category Card */
+.top-category {
+  grid-column: span 1;
+}
+
+.top-category .stat-value-text {
+  font-size: clamp(1.1rem, 3vw, 1.4rem);
+  font-weight: 700;
+  color: #3b82f6;
+  margin-bottom: 0.5rem;
+  line-height: 1.2;
+  word-break: break-word;
+}
+
+/* Common stat period styling */
+.stat-period {
+  font-size: 0.9rem;
+  color: var(--color-textSecondary);
+  margin-top: auto;
+}
+
 /* Quick Actions Card */
 .quick-actions {
   grid-column: span 1;

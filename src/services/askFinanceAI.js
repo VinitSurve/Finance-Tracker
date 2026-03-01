@@ -1,8 +1,8 @@
 import '../styles/global/global.css';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// Get API key from environment variable
-const API_KEY = import.meta.env.VITE_GEMINI_API_KEY || 'AIzaSyCjg7AvKcyQWM-VkC7JXXAoacb6OjE2VS4';
+// Get API key from environment variable - DO NOT hardcode keys!
+const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 
 // Check if API key exists
 const hasValidApiKey = API_KEY && API_KEY.length > 0;

@@ -29,10 +29,29 @@ const Dashboard = () => {
   const [balances, setBalances] = useState([]);
   const [totalBalance, setTotalBalance] = useState(0);
   const [transactions, setTransactions] = useState([]);
+  const [stats, setStats] = useState({
+    avgExpense: 0,
+    largestExpense: 0,
+    transactionCount: 0,
+    savingsRate: 0,
+    topCategory: ''
+  });
   
   const loadAllData = async () => {
     setIsLoading(true);
     try {
+      // First, verify user is authenticated
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError || !user) {
+        console.error('User not authenticated:', authError);
+        toast.error('Please log in to view your dashboard');
+        navigate('/login');
+        return;
+      }
+      
+      console.log('Loading dashboard for user:', user.email);
+      
       // Improved balance loading
       try {
         // Get real balances from database with proper logging
@@ -47,7 +66,8 @@ const Dashboard = () => {
               name,
               icon
             )
-          `);
+          `)
+          .eq('user_id', user.id);
         
         if (balancesError) {
           console.error('Error fetching balances:', balancesError);
@@ -55,7 +75,8 @@ const Dashboard = () => {
           // Fallback to direct table check
           const { data: directData, error: directError } = await supabase
             .from('user_balances')
-            .select('*');
+            .select('*')
+            .eq('user_id', user.id);
             
           console.log('Direct balance data:', directData, directError);
         } else {
@@ -70,41 +91,23 @@ const Dashboard = () => {
             color: getColorForAccount(item.balance_type?.name)
           }));
           
+          // Always use real data from database
+          setBalances(formattedBalances);
+          const totalBal = formattedBalances.reduce(
+            (sum, account) => sum + account.balance, 0
+          );
+          setTotalBalance(totalBal);
+          
           if (formattedBalances.length === 0) {
-            // Fallback for development: Show sample data if no balances
-            console.log('No balances found, using fixed sample data');
-            setBalances([
-              { 
-                id: 'gpay-sample', 
-                name: 'Gpay', 
-                icon: '📱', 
-                balance: 10626.08,
-                color: '#4285F4'
-              }
-            ]);
-            setTotalBalance(10626.08);
-          } else {
-            // Use real data
-            setBalances(formattedBalances);
-            const totalBal = formattedBalances.reduce(
-              (sum, account) => sum + account.balance, 0
-            );
-            setTotalBalance(totalBal);
+            console.log('No balances found in database');
           }
         }
       } catch (balanceError) {
         console.error('Error processing balances:', balanceError);
-        // Show hardcoded balance as fallback
-        setBalances([
-          { 
-            id: 'gpay-fallback', 
-            name: 'Gpay', 
-            icon: '📱', 
-            balance: 10626.08,
-            color: '#4285F4' 
-          }
-        ]);
-        setTotalBalance(10626.08);
+        // Show empty balances on error
+        setBalances([]);
+        setTotalBalance(0);
+        toast.error('Failed to load balances. Please check your Supabase connection.');
       }
       
       // 2. Load transactions - simplified with error handling
@@ -112,6 +115,7 @@ const Dashboard = () => {
         const { data: transactionsData, error: txError } = await supabase
           .from('transactions')
           .select('*')
+          .eq('user_id', user.id)
           .order('created_at', { ascending: false });
         
         if (txError) throw txError;
@@ -130,10 +134,48 @@ const Dashboard = () => {
         
         const savingsTotal = incomeTotal - expenseTotal;
         
+        // Calculate additional statistics
+        const expenses = (transactionsData || []).filter(tx => tx.type === 'expense');
+        const avgExpense = expenses.length > 0 
+          ? expenses.reduce((sum, tx) => sum + parseFloat(tx.amount || 0), 0) / expenses.length 
+          : 0;
+        
+        const largestExpense = expenses.length > 0 
+          ? Math.max(...expenses.map(tx => parseFloat(tx.amount || 0)))
+          : 0;
+        
+        const transactionCount = (transactionsData || []).length;
+        
+        const savingsRate = incomeTotal > 0 
+          ? ((savingsTotal / incomeTotal) * 100).toFixed(1)
+          : 0;
+        
+        // Calculate top spending category
+        const categoryTotals = {};
+        expenses.forEach(tx => {
+          const category = tx.category || 'Other';
+          categoryTotals[category] = (categoryTotals[category] || 0) + parseFloat(tx.amount || 0);
+        });
+        
+        const topCategory = Object.keys(categoryTotals).length > 0
+          ? Object.keys(categoryTotals).reduce((a, b) => 
+              categoryTotals[a] > categoryTotals[b] ? a : b
+            )
+          : 'N/A';
+        
         setUserData({
           income: incomeTotal,
           expenses: expenseTotal,
-          savings: savingsTotal
+          savings: savingsTotal,
+          categories: categoryTotals
+        });
+        
+        setStats({
+          avgExpense,
+          largestExpense,
+          transactionCount,
+          savingsRate,
+          topCategory
         });
       } catch (txError) {
         console.error("Error loading transactions:", txError);
@@ -393,12 +435,82 @@ const Dashboard = () => {
             <div className="expense-period">This month</div>
           </motion.div>
           
+          {/* Savings Rate Card */}
+          <motion.div 
+            className="dashboard-card savings-rate"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+          >
+            <div className="card-header">
+              <h2>Savings Rate</h2>
+            </div>
+            <div className="stat-value">{stats.savingsRate}%</div>
+            <div className="stat-period">Of total income</div>
+          </motion.div>
+          
+          {/* Average Expense Card */}
+          <motion.div 
+            className="dashboard-card avg-expense"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+          >
+            <div className="card-header">
+              <h2>Avg. Expense</h2>
+            </div>
+            <div className="stat-value">{formatAmount(stats.avgExpense)}</div>
+            <div className="stat-period">Per transaction</div>
+          </motion.div>
+          
+          {/* Largest Expense Card */}
+          <motion.div 
+            className="dashboard-card largest-expense"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.5 }}
+          >
+            <div className="card-header">
+              <h2>Largest Expense</h2>
+            </div>
+            <div className="stat-value">{formatAmount(stats.largestExpense)}</div>
+            <div className="stat-period">This month</div>
+          </motion.div>
+          
+          {/* Transaction Count Card */}
+          <motion.div 
+            className="dashboard-card transaction-count"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.6 }}
+          >
+            <div className="card-header">
+              <h2>Transactions</h2>
+            </div>
+            <div className="stat-value">{stats.transactionCount}</div>
+            <div className="stat-period">Total count</div>
+          </motion.div>
+          
+          {/* Top Spending Category Card */}
+          <motion.div 
+            className="dashboard-card top-category"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.7 }}
+          >
+            <div className="card-header">
+              <h2>Top Category</h2>
+            </div>
+            <div className="stat-value-text">{stats.topCategory}</div>
+            <div className="stat-period">Most spent on</div>
+          </motion.div>
+          
           {/* Quick Actions Card */}
           <motion.div 
             className="dashboard-card quick-actions"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
+            transition={{ duration: 0.5, delay: 0.8 }}
           >
             <div className="card-header">
               <h2>Quick Actions</h2>
@@ -448,7 +560,7 @@ const Dashboard = () => {
           className="accounts-section"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
+          transition={{ duration: 0.5, delay: 0.9 }}
         >
           <div className="section-header">
             <h2>Your Accounts</h2>
@@ -499,7 +611,7 @@ const Dashboard = () => {
           className="transactions-section"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.5 }}
+          transition={{ duration: 0.5, delay: 1.0 }}
         >
           <div className="section-header">
             <h2>Recent Transactions</h2>
@@ -544,7 +656,9 @@ const Dashboard = () => {
                       {transaction.type === 'income' ? '💰' : '💸'}
                     </div>
                     <div className="transaction-details">
-                      <div className="transaction-title">{transaction.category}</div>
+                      <div className="transaction-title">
+                        {transaction.reason || transaction.category}
+                      </div>
                       <div className="transaction-date">
                         {new Date(transaction.created_at).toLocaleDateString()}
                       </div>
@@ -566,7 +680,7 @@ const Dashboard = () => {
           className="charts-section"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.6 }}
+          transition={{ duration: 0.5, delay: 1.1 }}
         >
           <div className="section-header">
             <h2>Financial Overview</h2>

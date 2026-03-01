@@ -165,10 +165,17 @@ const Balances = () => {
           return;
         }
         
+        // Get authenticated user
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        if (userError || !user) {
+          throw new Error('You must be logged in to add accounts');
+        }
+        
         // Add new balance
         const { error } = await supabase
           .from('user_balances')
           .insert([{ 
+            user_id: user.id,
             balance_type_id: formData.balance_type_id, 
             amount,
             note: formData.note || null

@@ -5,46 +5,44 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-// Default user configuration for single-user mode
-export const DEFAULT_USER = {
-  id: 'default-user',
-  name: 'User',
-  email: 'user@example.com'
-};
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.error('Missing Supabase environment variables!');
+  console.error('Make sure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are set in .env file');
+}
 
-// Create Supabase client
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
-// Override auth functions for single-user mode
-const originalGetUser = supabase.auth.getUser;
-supabase.auth.getUser = async () => {
-  // In production, you'd use:
-  // return await originalGetUser();
-  
-  // For single-user mode, always return the default user
-  return {
-    data: {
-      user: DEFAULT_USER
-    },
-    error: null
-  };
-};
+// Create Supabase client with real authentication
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true
+  }
+});
 
 // Check database connection and log result
 const checkDatabaseConnection = async () => {
   try {
-    const { data, error } = await supabase
-      .from('transactions')
-      .select('count')
-      .limit(1);
+    const { data: { session } } = await supabase.auth.getSession();
     
-    if (error) {
-      console.error('Database connection failed:', error);
+    if (session) {
+      console.log('✅ User authenticated:', session.user.email);
+      
+      // Test database connection
+      const { error } = await supabase
+        .from('user_balances')
+        .select('count')
+        .limit(1);
+      
+      if (error) {
+        console.error('❌ Database connection failed:', error);
+      } else {
+        console.log('✅ Database connection successful');
+      }
     } else {
-      console.log('Database connection successful (transactions table)');
+      console.log('ℹ️ No active session - user needs to log in');
     }
   } catch (error) {
-    console.error('Database connection check error:', error);
+    console.error('❌ Database connection check error:', error);
   }
 };
 

@@ -423,10 +423,8 @@ export const savePushSubscription = async (subscription, userId) => {
     const { data, error } = await supabase
       .from('push_subscriptions')
       .insert([{
-        subscription: {
-          ...subscription,
-          user_id: userId
-        }
+        user_id: userId,
+        subscription: subscription
       }])
       .select();
       

@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../services/supabaseClient';
 import toast from 'react-hot-toast';
-import { CATEGORY_TO_BUDGET_MAP } from '../constants/categories';
 
 export const usePointsSystem = () => {
   const [points, setPoints] = useState(0);
@@ -27,30 +26,43 @@ export const usePointsSystem = () => {
     try {
       setIsLoading(true);
       
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        console.log('No authenticated user, skipping points load');
+        setPoints(0);
+        setIsLoading(false);
+        return;
+      }
+      
       // Get points from database
       const { data: pointsData, error: pointsError } = await supabase
         .from('points')
         .select('points')
-        .single();
+        .eq('user_id', user.id)
+        .maybeSingle();
       
-      if (pointsError) {
+      if (pointsError && pointsError.code !== 'PGRST116') {
         console.error('Error loading points:', pointsError);
+        setPoints(0);
+      } else if (!pointsData) {
+        // No points record exists, create one
+        console.log('Creating new points record for user');
+        const { data: newPoints, error: createError } = await supabase
+          .from('points')
+          .insert([{ user_id: user.id, points: 0 }])
+          .select()
+          .single();
         
-        // If no points record exists, create one
-        if (pointsError.code === 'PGRST116') { // No rows returned
-          const { data, error: createError } = await supabase
-            .from('points')
-            .insert([{ points: 0 }])
-            .select();
-          
-          if (createError) {
-            console.error('Error creating points record:', createError);
-          } else {
-            console.log('Created new points record');
-            setPoints(0);
-          }
+        if (createError) {
+          console.error('Error creating points record:', createError);
+          setPoints(0);
+        } else {
+          console.log('Created new points record');
+          setPoints(0);
         }
-      } else if (pointsData) {
+      } else {
         setPoints(pointsData.points || 0);
       }
       
@@ -58,7 +70,8 @@ export const usePointsSystem = () => {
       await loadPointsBreakdown();
       
     } catch (error) {
-      console.error('Error loading points:', error);
+      console.error('Error in loadPoints:', error);
+      setPoints(0);
     } finally {
       setIsLoading(false);
     }
@@ -67,9 +80,18 @@ export const usePointsSystem = () => {
   // Load detailed points breakdown
   const loadPointsBreakdown = async () => {
     try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        setPointsBreakdown([]);
+        return;
+      }
+      
       const { data, error } = await supabase
         .from('points_history')
         .select('*')
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(50);
         
@@ -84,9 +106,18 @@ export const usePointsSystem = () => {
   // Record points change with reason
   const recordPointsChange = async (changeAmount, reason, category = 'transaction') => {
     try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        console.error('No user authenticated');
+        return;
+      }
+      
       const { error } = await supabase
         .from('points_history')
         .insert([{
+          user_id: user.id,
           points_change: changeAmount,
           reason: reason,
           category: category,
@@ -107,11 +138,20 @@ export const usePointsSystem = () => {
     if (!amount || isNaN(Number(amount))) return;
     
     try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        console.error('No user authenticated');
+        return;
+      }
+      
       // Get current points record
       const { data: currentData, error: fetchError } = await supabase
         .from('points')
         .select('id, points')
-        .single();
+        .eq('user_id', user.id)
+        .maybeSingle();
       
       if (fetchError && fetchError.code !== 'PGRST116') {
         console.error('Error fetching points:', fetchError);
@@ -135,7 +175,7 @@ export const usePointsSystem = () => {
         // Create new points record
         const { error: insertError } = await supabase
           .from('points')
-          .insert([{ points: amount }]);
+          .insert([{ user_id: user.id, points: amount }]);
         
         if (insertError) {
           console.error('Error creating points record:', insertError);
@@ -195,14 +235,22 @@ export const usePointsSystem = () => {
   // Check for transaction frequency penalties
   const checkTransactionFrequency = async (transactionDate) => {
     try {
-      // Format the date to YYYY-MM-DD for comparison
-      const dateOnly = transactionDate.substring(0, 10);
+      // Get authenticated user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return 0;
+      
+      // Get start and end of day for the transaction date
+      const dateObj = new Date(transactionDate);
+      const startOfDay = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate());
+      const endOfDay = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate() + 1);
       
       // Get transactions for the same day
       const { data: transactions, error } = await supabase
         .from('transactions')
         .select('id')
-        .ilike('created_at', `${dateOnly}%`);
+        .eq('user_id', user.id)
+        .gte('created_at', startOfDay.toISOString())
+        .lt('created_at', endOfDay.toISOString());
         
       if (error) throw error;
       
@@ -229,12 +277,16 @@ export const usePointsSystem = () => {
   };
 
   // Check if budget is exceeded and apply penalty if needed
-  const checkBudgetExceeded = async (category_id, amount, type) => {
+  const checkBudgetExceeded = async (category, amount, type) => {
     if (type !== 'expense') return 0;
     
     try {
-      // Map the category_id to the budget category name
-      const budgetCategory = CATEGORY_TO_BUDGET_MAP[category_id] || 'Other';
+      // Get authenticated user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return 0;
+      
+      // Use category directly (already the budget category name)
+      const budgetCategory = category || 'Other';
       
       // Get the current month and year
       const now = new Date();
@@ -244,6 +296,7 @@ export const usePointsSystem = () => {
       const { data: budget, error: budgetError } = await supabase
         .from('budgets')
         .select('*')
+        .eq('user_id', user.id)
         .eq('category', budgetCategory)
         .eq('month_year', monthYear)
         .maybeSingle();
@@ -259,16 +312,17 @@ export const usePointsSystem = () => {
       
       const { data: expenses, error: expensesError } = await supabase
         .from('transactions')
-        .select('amount, category_id')
+        .select('amount, category')
+        .eq('user_id', user.id)
         .eq('type', 'expense')
         .gte('created_at', startDate)
         .lte('created_at', endDate);
         
       if (expensesError) throw expensesError;
       
-      // Filter expenses by the budget category (using our category mapping)
+      // Filter expenses by the budget category
       const categoryExpenses = expenses.filter(exp => 
-        CATEGORY_TO_BUDGET_MAP[exp.category_id] === budgetCategory
+        exp.category === budgetCategory
       );
       
       // Calculate total spent including the new expense
@@ -303,6 +357,13 @@ export const usePointsSystem = () => {
         return;
       }
       
+      // Get authenticated user
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        console.error('User not authenticated');
+        return;
+      }
+      
       const amount = parseFloat(transaction.amount);
       
       // 1. Basic points calculation based on amount
@@ -313,7 +374,7 @@ export const usePointsSystem = () => {
       
       // 3. Check for budget exceeded penalties (only for expenses)
       const budgetPenalty = transaction.type === 'expense' 
-        ? await checkBudgetExceeded(transaction.category_id, amount, transaction.type)
+        ? await checkBudgetExceeded(transaction.category, amount, transaction.type)
         : 0;
       
       // Total points to add
@@ -323,7 +384,8 @@ export const usePointsSystem = () => {
       const { data: currentData, error: fetchError } = await supabase
         .from('points')
         .select('id, points')
-        .single();
+        .eq('user_id', user.id)
+        .maybeSingle();
       
       if (fetchError && fetchError.code !== 'PGRST116') {
         console.error('Error fetching points:', fetchError);
@@ -346,7 +408,7 @@ export const usePointsSystem = () => {
       } else {
         const { error: insertError } = await supabase
           .from('points')
-          .insert([{ points: pointsToAdd }]);
+          .insert([{ user_id: user.id, points: pointsToAdd }]);
         
         if (insertError) {
           console.error('Error creating points record:', insertError);
@@ -412,6 +474,10 @@ export const usePointsSystem = () => {
   // Check if all budgets were followed for end-of-month bonus
   const checkMonthEndBonus = async () => {
     try {
+      // Get authenticated user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      
       // Get the previous month
       const now = new Date();
       const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1);
@@ -421,6 +487,7 @@ export const usePointsSystem = () => {
       const { data: budgets, error: budgetsError } = await supabase
         .from('budgets')
         .select('*')
+        .eq('user_id', user.id)
         .eq('month_year', monthYear);
         
       if (budgetsError) throw budgetsError;
@@ -440,6 +507,7 @@ export const usePointsSystem = () => {
         const { data: expenses, error: expensesError } = await supabase
           .from('transactions')
           .select('amount')
+          .eq('user_id', user.id)
           .eq('category', budget.category)
           .eq('type', 'expense')
           .gte('created_at', startDate)

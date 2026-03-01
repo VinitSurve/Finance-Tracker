@@ -186,6 +186,29 @@
   color: white;
 }
 
+/* Sign Out Button Styling */
+.nav-tab.sign-out-button {
+  margin-top: auto;
+  border-top: 1px solid var(--color-border);
+  padding-top: 0.75rem;
+  color: #e74c3c;
+  transition: all 0.2s ease;
+}
+
+.nav-tab.sign-out-button:hover {
+  background-color: rgba(231, 76, 60, 0.1);
+  color: #c0392b;
+}
+
+.dark-mode .nav-tab.sign-out-button {
+  color: #ff6b6b;
+}
+
+.dark-mode .nav-tab.sign-out-button:hover {
+  background-color: rgba(255, 107, 107, 0.15);
+  color: #ff8787;
+}
+
 .tab-icon {
   font-size: 1.4rem;
 }

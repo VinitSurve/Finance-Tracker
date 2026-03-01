@@ -92,7 +92,7 @@ const BudgetManagement = () => {
       // 3. Load expenses for the date range
       const { data: expenseData, error: expenseError } = await supabase
         .from('transactions')
-        .select('category_id, amount')
+        .select('category, amount')
         .eq('type', 'expense')
         .gte('created_at', startDate)
         .lte('created_at', endDate);
@@ -102,10 +102,8 @@ const BudgetManagement = () => {
       // 4. Sum up expenses by category using the standardized category mapping
       const expensesByCategory = {};
       (expenseData || []).forEach(expense => {
-        // Map the category_id to budget category name using our mapping
-        const cat = expense.category_id ? 
-          CATEGORY_TO_BUDGET_MAP[expense.category_id] || 'Other' : 
-          'Other';
+        // Use category directly from the transaction
+        const cat = expense.category || 'Other';
           
         expensesByCategory[cat] = (expensesByCategory[cat] || 0) + parseFloat(expense.amount || 0);
       });
@@ -139,17 +137,26 @@ const BudgetManagement = () => {
       return;
     }
     
-    if (!formData.duration || parseInt(formData.duration) <= 0) {
+    // Validate duration - default to 30 if not provided
+    const durationValue = formData.duration ? parseInt(formData.duration) : 30;
+    if (durationValue <= 0) {
       toast.error('Please enter a valid duration in days');
       return;
     }
     
     try {
+      // Get authenticated user
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        throw new Error('You must be logged in to manage budgets');
+      }
+
       const budgetItem = {
+        user_id: user.id,
         category: formData.category, // This is now the standardized category name
         amount: parseFloat(formData.amount),
         month_year: selectedMonth,
-        duration: parseInt(formData.duration)
+        duration: durationValue // Include duration with default of 30 days
       };
       
       if (editingBudget) {
