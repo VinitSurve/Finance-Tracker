@@ -381,7 +381,7 @@ const Dashboard = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <h1>Welcome, Vinit!</h1>
+          <h1>Welcome</h1>
           <p className="greeting-subtitle">Here's your financial overview</p>
         </motion.div>
       </section>
