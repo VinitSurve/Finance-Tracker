@@ -1,147 +1,261 @@
 # 💰 Finance Tracker
 
-A modern, feature-rich personal finance tracking application built with React, Vite, and Supabase.
+A modern, feature-rich personal finance tracker built with React and Supabase. Track your income and expenses, manage multiple balance types, set budgets, visualize your spending patterns, and get AI-powered financial insights—all with a beautiful, responsive interface that works seamlessly in both light and dark modes.
 
 ## ✨ Features
 
-- 💵 Track income and expenses
-- 🏦 Multiple account management
-- 🔄 Transfer money between accounts
-- 📊 Visual analytics and charts
-- 📱 Responsive design
-- 🌙 Dark/Light theme
-- 📈 Budget tracking
-- 🎯 Custom categories and reasons
-- 🔐 Secure authentication with Supabase
+- 🔐 **User Authentication**: Secure sign-up and sign-in with Supabase Auth
+- 💳 **Multiple Balance Types**: Track cash, digital wallets (GPay), piggy banks, and custom balance types
+- 📊 **Transaction Management**: Add, filter, and categorize income/expense transactions with detailed notes
+- 📈 **Visual Analytics**: Interactive charts and graphs using Chart.js and Recharts
+- 💡 **AI Assistant**: Get personalized financial insights powered by Google Gemini AI
+- 🎯 **Budget Management**: Set and track monthly budgets by category
+- 🎨 **Modern UI/UX**: Smooth animations with Framer Motion, responsive design, and theme switching
+- 🌓 **Dark Mode**: Full dark/light theme support with seamless transitions
+- 🌍 **Multi-Currency**: Support for USD, EUR, GBP, INR, JPY, CAD, AUD, and CNY
+- 📱 **PWA Support**: Install as a mobile or desktop app
+- 🔔 **Notifications**: Real-time toast notifications with Do Not Disturb mode
+- 🎮 **Gamification**: Points system with confetti celebrations
+- 📤 **Data Export**: Export your financial data for backup or analysis
+- 🔄 **Offline Support**: Network status detection and offline indicators
 
-## 🚀 Quick Start
+## 🛠️ Tech Stack
+
+### Frontend
+- **Framework**: React 18.2.0
+- **Build Tool**: Vite 6.3.1
+- **Routing**: React Router DOM 7.6.1
+- **Styling**: Custom CSS with CSS Variables
+- **Animations**: Framer Motion 10.18.0
+- **3D Graphics**: Three.js + React Three Fiber + Drei
+
+### Backend & Database
+- **Backend as a Service**: Supabase 2.36.0
+- **Authentication**: Supabase Auth
+- **Database**: PostgreSQL (via Supabase)
+
+### Data Visualization
+- **Chart Libraries**: 
+  - Chart.js 4.4.9
+  - React Chart.js 2 5.3.0
+  - Recharts 2.12.0
+
+### AI Integration
+- **AI SDK**: Google Generative AI 0.2.1 (Gemini)
+
+### UI Components & Icons
+- **Icons**: Lucide React 0.511.0, React Icons 4.11.0
+- **Notifications**: React Hot Toast 2.5.2
+- **Effects**: Canvas Confetti 1.9.3
+
+### Developer Tools
+- **Linting**: ESLint 9.22.0
+- **Type Checking**: TypeScript types for React
+- **PWA**: Vite Plugin PWA 1.0.0
+
+## 🚀 Getting Started
 
 ### Prerequisites
 
-- Node.js (v16 or higher)
-- npm or yarn
-- Supabase account and project
+- **Node.js** (v16 or higher)
+- **npm** or **yarn**
+- **Supabase Account** ([Sign up here](https://supabase.com))
+- **Google Gemini API Key** ([Get one here](https://aistudio.google.com/app/apikey))
 
 ### Installation
 
-1. **Clone the repository**
+1. **Clone the repository**:
    ```bash
    git clone https://github.com/VinitSurve/Finance-Tracker.git
    cd Finance-Tracker
    ```
 
-2. **Install dependencies**
+2. **Install dependencies**:
    ```bash
    npm install
    ```
 
-3. **Set up environment variables**
-   - Copy `.env.example` to `.env`
-   - Add your Supabase credentials:
-   ```env
-   VITE_SUPABASE_URL=your_supabase_url
-   VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-   ```
-
-4. **Set up the database**
-   ⚠️ **IMPORTANT**: You must run the database migrations before using the app!
+3. **Set up environment variables**:
    
-   See [FIX_TRANSFER_ERROR.md](./FIX_TRANSFER_ERROR.md) for quick setup or [DATABASE_SETUP_GUIDE.md](./DATABASE_SETUP_GUIDE.md) for detailed instructions.
-
-5. **Run the development server**
+   Create a `.env` file in the root directory (use `.env.example` as template):
    ```bash
-   npm run dev
+   cp .env.example .env
+   ```
+   
+   Fill in your environment variables:
+   ```env
+   # Supabase Configuration
+   VITE_SUPABASE_URL=your_supabase_url_here
+   VITE_SUPABASE_ANON_KEY=your_supabase_anon_key_here
+
+   # Gemini API Configuration
+   VITE_GEMINI_API_KEY=your_gemini_api_key_here
+
+   # Other Configuration
+   VITE_APP_ENV=development
    ```
 
-6. **Open your browser**
-   Navigate to `http://localhost:5173`
+4. **Set up Supabase Database**:
+   
+   Create the following tables in your Supabase project:
+   - `balance_types` (id, name, icon, is_default)
+   - `user_balances` (id, user_id, balance_type_id, amount)
+   - `transactions` (id, user_id, balance_id, amount, type, category, reason, note, created_at)
+   - `budgets` (for budget management feature)
 
-## 📁 Project Structure
+### Run Development Server
+
+```bash
+npm run dev
+```
+
+The app will be available at `http://localhost:5527`
+
+### Build for Production
+
+```bash
+npm run build
+```
+
+### Preview Production Build
+
+```bash
+npm run preview
+```
+
+### Linting
+
+```bash
+npm run lint
+```
+
+## 📱 Usage
+
+1. **Sign Up / Sign In**: Create an account or log in with your email
+2. **Set Up Balances**: Configure your initial balance types (Cash, GPay, Bank, etc.)
+3. **Add Transactions**: 
+   - Record income (salary, freelance, gifts)
+   - Track expenses (groceries, rent, utilities, subscriptions)
+4. **Set Budgets**: Create monthly budgets for different categories
+5. **View Analytics**: Check your spending patterns with visual charts
+6. **Get AI Insights**: Ask the AI assistant about your financial habits
+7. **Customize**: Switch themes, change currency, adjust notification settings
+
+## 📂 Project Structure
 
 ```
 Finance-Tracker/
+├── public/              # Static assets, PWA manifest
+│   ├── index.html
+│   └── manifest.json
 ├── src/
 │   ├── components/      # Reusable UI components
-│   ├── pages/          # Page components
-│   ├── services/       # API and database services
-│   ├── context/        # React context providers
-│   ├── hooks/          # Custom React hooks
-│   ├── styles/         # CSS stylesheets
-│   ├── migrations/     # Database migration files
-│   └── utils/          # Utility functions
-├── public/             # Static assets
-└── docs/              # Documentation
+│   │   ├── AIAssistant.jsx
+│   │   ├── FloatingNav.jsx
+│   │   ├── LoadingScreen.jsx
+│   │   ├── Notifications.jsx
+│   │   └── PWAInstallPrompt.jsx
+│   ├── context/         # React Context providers
+│   │   ├── AuthContext.jsx
+│   │   ├── ThemeContext.jsx
+│   │   └── CurrencyContext.jsx
+│   ├── pages/           # Page components
+│   │   ├── Dashboard.jsx
+│   │   ├── Login.jsx
+│   │   ├── SetupBalances.jsx
+│   │   ├── AddIncome.jsx
+│   │   ├── AddExpense.jsx
+│   │   ├── Transactions.jsx
+│   │   ├── BudgetManagement.jsx
+│   │   ├── Settings.jsx
+│   │   ├── PointsPage.jsx
+│   │   └── NotFound.jsx
+│   ├── services/        # External service integrations
+│   │   └── supabaseClient.js
+│   ├── config/          # Configuration files
+│   │   └── supabase.js
+│   ├── styles/          # CSS files
+│   │   ├── global/
+│   │   ├── pages/
+│   │   ├── variables.css
+│   │   └── App.css
+│   ├── App.jsx          # Main app component
+│   ├── main.jsx         # App entry point
+│   └── index.css
+├── .env.example         # Environment variables template
+├── vite.config.js       # Vite configuration
+├── package.json         # Dependencies and scripts
+└── index.html           # HTML entry point
 ```
 
-## 🗄️ Database Setup
+## 🎨 Key Features Explained
 
-The application requires specific database functions to work properly. If you encounter errors like:
+### AI Financial Assistant
+Powered by Google Gemini AI, the assistant can:
+- Analyze your spending patterns
+- Provide budgeting advice
+- Answer questions about your finances
+- Suggest ways to save money
 
-```
-Could not find the function public.transfer_money
-```
+### Responsive Design
+- Mobile-first approach with clamp() functions for fluid typography
+- Breakpoints optimized for phones, tablets, and desktops
+- Touch-friendly UI elements
 
-You need to run the database migrations. See:
-- **Quick Fix**: [FIX_TRANSFER_ERROR.md](./FIX_TRANSFER_ERROR.md)
-- **Complete Guide**: [DATABASE_SETUP_GUIDE.md](./DATABASE_SETUP_GUIDE.md)
+### Theme System
+- CSS custom properties for consistent theming
+- Smooth transitions between light and dark modes
+- Persistent theme preference
 
-## 🛠️ Built With
-
-- **React** - UI framework
-- **Vite** - Build tool and dev server
-- **Supabase** - Backend and database
-- **Recharts** - Data visualization
-- **Framer Motion** - Animations
-- **React Router** - Navigation
-- **React Hot Toast** - Notifications
-
-## 📦 Available Scripts
-
-```bash
-npm run dev          # Start development server
-npm run build        # Build for production
-npm run preview      # Preview production build
-npm run lint         # Run ESLint
-```
-
-## 🔒 Security
-
-- All user data is secured with Row Level Security (RLS) in Supabase
-- Authentication handled by Supabase Auth
-- Environment variables for sensitive data
+### Data Visualization
+Three charting libraries provide:
+- Pie charts for category-wise expenses
+- Line charts for balance trends over time
+- Bar charts for monthly income vs. expenses
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions are welcome! Here's how you can help:
 
-## 📝 License
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/my-feature`
+3. Commit your changes: `git commit -m "Add my feature"`
+4. Push to the branch: `git push origin feature/my-feature`
+5. Open a Pull Request
 
-This project is open source and available under the [MIT License](LICENSE).
+Please ensure your code follows the existing style and all tests pass.
 
-## 🐛 Troubleshooting
+## 🗺️ Roadmap
 
-### Common Issues
+- [ ] Recurring transactions
+- [ ] Budget alerts and notifications
+- [ ] CSV/Excel import/export
+- [ ] Receipt photo uploads
+- [ ] Multi-user support for families
+- [ ] Investment tracking
+- [ ] Bill reminders
+- [ ] Custom categories and tags
+- [ ] Advanced analytics and reports
+- [ ] Bank account integration
 
-1. **Transfer function not found**
-   - Run the SQL migrations in Supabase
-   - See [FIX_TRANSFER_ERROR.md](./FIX_TRANSFER_ERROR.md)
+## 📄 License
 
-2. **Authentication errors**
-   - Check your Supabase credentials in `.env`
-   - Ensure your Supabase project is active
+This project is open source. Add a license file (MIT, Apache 2.0, GPL-3.0, etc.) to specify terms of use.
 
-3. **Build errors**
-   - Delete `node_modules` and `package-lock.json`
-   - Run `npm install` again
+## 👤 Author
 
-## 📞 Support
+**Vinit Surve**  
+- GitHub: [@VinitSurve](https://github.com/VinitSurve)
+- Repository: [Finance-Tracker](https://github.com/VinitSurve/Finance-Tracker)
 
-If you encounter any issues, please:
-1. Check the troubleshooting guide above
-2. Review the database setup guides
-3. Open an issue on GitHub
+## 🙏 Acknowledgments
+
+- [Supabase](https://supabase.com) - Backend and authentication
+- [Google AI](https://ai.google.dev) - Gemini AI integration
+- [Vite](https://vitejs.dev) - Lightning-fast build tool
+- [React](https://react.dev) - UI framework
+- Chart.js & Recharts - Data visualization
 
 ---
 
-Made with ❤️ by [Vinit Surve](https://github.com/VinitSurve)
-
+⭐ If you find this project useful, please consider giving it a star!
